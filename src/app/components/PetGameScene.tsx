@@ -56,7 +56,7 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
 
       let pet: Phaser.Physics.Arcade.Sprite;
       let petState = 'idle';
-      let lastInteraction = Date.now();
+      const lastInteraction = Date.now();
       let statsText: Phaser.GameObjects.Text;
       let currentStats = { ...petStats };
       let environmentImage: Phaser.GameObjects.Image;

@@ -21,7 +21,7 @@ const getStorageKey = (year: number, month: number): string => {
 };
 
 export const ViewJournal: React.FC = () => {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate] = useState(new Date());
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [moodData, setMoodData] = useState<Record<string, string>>({});
 
@@ -60,7 +60,7 @@ export const ViewJournal: React.FC = () => {
           const date = new Date(currentYear, currentMonth, i);
           setSelectedEntry({
             date: dateKey,
-            mood: moodData[dateKey] as any,
+            mood: moodData[dateKey] as 'good' | 'neutral' | 'bad' | 'stress' | 'meh',
             notes: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis turpis mi, aliquam quis vehicula vel, porta eu leo. Aliquam fermentum faucibus nulla, non suscipit leo suscipit ut. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Nam quis",
             dayNumber: i,
             dayName: dayNames[date.getDay()],
@@ -70,7 +70,7 @@ export const ViewJournal: React.FC = () => {
         }
       }
     }
-  }, [moodData, selectedEntry, currentYear, currentMonth, daysInMonth]);
+  }, [moodData, selectedEntry, currentYear, currentMonth, daysInMonth, dayNames, monthNames]);
 
   const getMoodEmojiSrc = (mood: string) => {
     switch (mood) {
@@ -89,23 +89,6 @@ export const ViewJournal: React.FC = () => {
     }
   };
 
-  const getMoodColor = (mood: string) => {
-    switch (mood) {
-      case 'good':
-        return 'bg-yellow-400';
-      case 'neutral':
-        return 'bg-blue-500';
-      case 'bad':
-        return 'bg-red-500';
-      case 'stress':
-        return 'bg-orange-500';
-      case 'meh':
-        return 'bg-cyan-300';
-      default:
-        return 'bg-gray-300';
-    }
-  };
-
   const handleDayClick = (dayNumber: number) => {
     const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
     const mood = moodData[dateKey];
@@ -114,7 +97,7 @@ export const ViewJournal: React.FC = () => {
       const date = new Date(currentYear, currentMonth, dayNumber);
       setSelectedEntry({
         date: dateKey,
-        mood: mood as any,
+        mood: mood as 'good' | 'neutral' | 'bad' | 'stress' | 'meh',
         notes: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis turpis mi, aliquam quis vehicula vel, porta eu leo. Aliquam fermentum faucibus nulla, non suscipit leo suscipit ut. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Nam quis",
         dayNumber: dayNumber,
         dayName: dayNames[date.getDay()],

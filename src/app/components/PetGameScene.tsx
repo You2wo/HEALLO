@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import dynamic from "next/dynamic";
 
 interface PetGameSceneProps {
   className?: string;
@@ -9,7 +8,7 @@ interface PetGameSceneProps {
 
 export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) => {
   const gameRef = useRef<HTMLDivElement>(null);
-  const phaserGameRef = useRef<any>(null);
+  const phaserGameRef = useRef<Phaser.Game | null>(null);
   const [isClient, setIsClient] = useState(false);
   const [petStats, setPetStats] = useState({
     happiness: 100,
@@ -259,7 +258,7 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
         // Pet drag interaction
         this.input.setDraggable(pet);
         
-        this.input.on('drag', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject, dragX: number, dragY: number) => {
+        this.input.on('drag', (_pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject, dragX: number, dragY: number) => {
           if (gameObject === pet) {
             pet.x = dragX;
             pet.y = dragY;
@@ -271,7 +270,7 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
           }
         });
 
-        this.input.on('dragend', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject) => {
+        this.input.on('dragend', (_pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject) => {
           if (gameObject === pet) {
             petState = 'idle';
             updatePetStats('happiness', 3);
@@ -436,7 +435,7 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
         phaserGameRef.current = null;
       }
     };
-  }, [isClient]);
+  }, [isClient, petStats]);
 
   if (!isClient) {
     return (

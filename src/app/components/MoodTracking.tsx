@@ -184,7 +184,7 @@ const MoodSelector: React.FC<{
               <div className="absolute top-[-100px] md:top-[-200px] left-1/2 transform -translate-x-1/2 z-20">
                 <div className="relative bg-white rounded-2xl md:rounded-3xl p-6 md:p-12 shadow-2xl max-w-xs md:max-w-2xl w-[280px] md:w-[500px]">
                   <p className="text-sm md:text-2xl text-gray-600 text-center leading-relaxed font-medium">
-                    Believe you can and<br />you're halfway there!
+                    Believe you can and<br />you&apos;re halfway there!
                   </p>
                   {/* Speech bubble tail/spike pointing down */}
                   <div className="absolute -bottom-4 md:-bottom-8 left-1/2 transform -translate-x-1/2">
@@ -350,7 +350,6 @@ export const MoodTracking: React.FC<MoodTrackingProps> = () => {
   };
 
   const handleDayClick = (dayNumber: number) => {
-    const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
     const clickedDate = new Date(currentYear, currentMonth, dayNumber);
     
     // Don't allow selecting future dates
@@ -372,11 +371,7 @@ export const MoodTracking: React.FC<MoodTrackingProps> = () => {
     setSelectedDay(null);
   };
 
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    const newDate = new Date(currentYear, currentMonth + (direction === 'next' ? 1 : -1), 1);
-    setCurrentDate(newDate);
-  };
-
+  
   // Generate days array
   const days: MoodDay[] = [];
   for (let i = 1; i <= daysInMonth; i++) {
@@ -394,14 +389,7 @@ export const MoodTracking: React.FC<MoodTrackingProps> = () => {
     rows.push(days.slice(i, i + 8));
   }
 
-  // Calculate mood statistics
-  const stats = {
-    good: Object.values(moodData).filter(m => m === 'good').length,
-    neutral: Object.values(moodData).filter(m => m === 'neutral').length,
-    bad: Object.values(moodData).filter(m => m === 'bad').length,
-    total: Object.values(moodData).length
-  };
-
+  
   const handleScheduleClick = () => {
     // Open modal for today's date
     const dayToSelect = isCurrentMonth ? todayDate : 1;

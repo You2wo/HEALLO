@@ -182,7 +182,7 @@ export const DailyGoals: React.FC<DailyGoalsProps> = ({
             {/* Modal Content */}
             <div className="pt-2">
               <h2 className="text-3xl font-bold text-blue-600 mb-8">
-                Let's make a new routine!
+                Let&apos;s make a new routine!
               </h2>
 
               {/* Routine Name Input */}

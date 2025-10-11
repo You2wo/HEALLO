@@ -88,7 +88,7 @@ export const Streak: React.FC<StreakProps> = ({ days = 0 }) => {
 
             {/* Modal Content */}
             <div className="text-center pt-4">
-              <p className="text-gray-600 text-lg mb-2">Congrats you're on a</p>
+              <p className="text-gray-600 text-lg mb-2">Congrats you&apos;re on a</p>
               <h2 className="text-5xl font-bold text-gray-900 mb-8">
                 {days} Days Streak!
               </h2>

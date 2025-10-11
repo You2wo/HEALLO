@@ -242,16 +242,6 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
           // Emit particles
           particles.setPosition(pet.x, pet.y);
           particles.explode(20);
-          
-          // Play bounce animation
-          this.tweens.add({
-            targets: pet,
-            scaleX: 1.8,
-            scaleY: 1.8,
-            duration: 100,
-            yoyo: true,
-            ease: 'Bounce.easeOut'
-          });
 
           // Update stats
           updatePetStats('happiness', 5);

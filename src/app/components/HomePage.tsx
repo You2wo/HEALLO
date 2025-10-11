@@ -43,12 +43,12 @@ export const HomePage = (): React.JSX.Element => {
         {/* Header Section */}
         <header className="max-w-6xl mx-auto mb-8">
           <nav className="flex items-center justify-center gap-6">
-            <button className="text-gray-600 hover:text-gray-800 transition-colors" aria-label="Settings">
+            <Link href="/settings" className="text-gray-600 hover:text-gray-800 transition-colors" aria-label="Settings">
               <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-            </button>
+            </Link>
             <Link href="/" className="text-blue-600 hover:text-blue-700 transition-colors text-lg md:text-xl font-semibold">
               Home
             </Link>
@@ -75,53 +75,32 @@ export const HomePage = (): React.JSX.Element => {
           </div>
         </div>
 
-        {/* Mobile Sidebar Toggle Button */}
+        {/* Mobile Toggle Button */}
         <button
           onClick={() => setShowMobileSidebar(!showMobileSidebar)}
-          className="md:hidden fixed left-0 top-1/2 -translate-y-1/2 z-40 bg-white hover:bg-gray-50 rounded-r-2xl p-3 shadow-xl transition-all"
-          aria-label="Toggle sidebar"
+          className="md:hidden fixed top-20 left-4 z-40 bg-white hover:bg-gray-50 rounded-xl p-3 shadow-xl transition-all"
+          aria-label="Toggle schedule and streak"
         >
           <svg
-            className={`w-6 h-6 transition-transform ${showMobileSidebar ? 'rotate-180' : ''}`}
+            className="w-6 h-6"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            {showMobileSidebar ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            )}
           </svg>
         </button>
 
-        {/* Mobile Sidebar */}
-        <div
-          className={`md:hidden fixed left-0 top-0 h-full w-[85%] max-w-sm bg-white shadow-2xl z-30 transition-transform duration-300 overflow-y-auto ${
-            showMobileSidebar ? 'translate-x-0' : '-translate-x-full'
-          }`}
-        >
-          <div className="p-6 space-y-6">
-            {/* Close button */}
-            <button
-              onClick={() => setShowMobileSidebar(false)}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
-              aria-label="Close sidebar"
-            >
-              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 mt-8">Dashboard</h2>
-            
+        {/* Mobile Schedule and Streak - Hide/Show */}
+        {showMobileSidebar && (
+          <div className="md:hidden fixed top-32 left-4 right-4 z-30 bg-white rounded-2xl shadow-2xl p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
             <MoodTracking month="September" />
             <Streak days={streak} />
           </div>
-        </div>
-
-        {/* Sidebar Overlay */}
-        {showMobileSidebar && (
-          <div
-            className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-20"
-            onClick={() => setShowMobileSidebar(false)}
-          />
         )}
 
         {/* Mobile Bottom Sheet - Daily Goals */}

@@ -6,11 +6,13 @@ import { Streak } from "./Streak";
 import { MoodTracking, calculateStreak } from "./MoodTracking";
 import { DailyGoals } from "./DailyGoals";
 import { PetGameScene } from "./PetGameScene";
+import { useSettings } from "../contexts/SettingsContext";
 
 export const HomePage = (): React.JSX.Element => {
   const [streak, setStreak] = useState(0);
   const [showMobileGoals, setShowMobileGoals] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const { componentScale, fontScale } = useSettings();
 
   // Calculate streak on mount and when localStorage changes
   useEffect(() => {
@@ -62,16 +64,24 @@ export const HomePage = (): React.JSX.Element => {
         </header>
 
         {/* Desktop Layout - Components positioned at edges over game scene */}
-        <div className="hidden md:flex w-full max-w-[1920px] mx-auto justify-between items-start aspect-scale">
-          {/* Left Column - Mood Tracking & Daily Goals */}
-          <div className="space-y-6 flex-shrink-0">
-            <MoodTracking month="September" />
-            <DailyGoals />
-          </div>
+        <div className="hidden md:block w-full">
+          <div 
+            className="flex justify-between items-start aspect-scale"
+            style={{ 
+              transform: `scale(${componentScale})`,
+              transformOrigin: 'top left'
+            }}
+          >
+            {/* Left Column - Mood Tracking & Daily Goals */}
+            <div className="space-y-6 flex-shrink-0" style={{ fontSize: `${fontScale}rem` }}>
+              <MoodTracking month="September" />
+              <DailyGoals />
+            </div>
 
-          {/* Right Column - Streak - positioned close to right edge */}
-          <div className="flex-shrink-0 mr-0">
-            <Streak days={streak} />
+            {/* Right Column - Streak - positioned at far right edge */}
+            <div className="flex-shrink-0" style={{ fontSize: `${fontScale}rem` }}>
+              <Streak days={streak} />
+            </div>
           </div>
         </div>
 

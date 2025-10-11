@@ -2,9 +2,11 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useSettings } from "../contexts/SettingsContext";
 
 export default function SettingsPage() {
   const [nickname, setNickname] = useState("");
+  const { componentScale, fontScale, setComponentScale, setFontScale } = useSettings();
 
   const handleSave = () => {
     // Save nickname logic here
@@ -19,6 +21,11 @@ export default function SettingsPage() {
   const handleDeactivate = () => {
     // Deactivate account logic here
     console.log("Deactivating account...");
+  };
+
+  const handleResetSettings = () => {
+    setComponentScale(1);
+    setFontScale(1);
   };
 
   return (
@@ -90,6 +97,86 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* Customization Settings Card */}
+        <div className="bg-white rounded-3xl shadow-lg p-8 md:p-12 mb-6">
+          <h2 className="text-3xl font-bold text-gray-800 mb-8">Customization</h2>
+
+          {/* Component Size Slider */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <label className="text-lg font-semibold text-gray-700">
+                Component Size
+              </label>
+              <span className="text-lg font-bold text-blue-600">
+                {Math.round(componentScale * 100)}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0.7"
+              max="1.3"
+              step="0.05"
+              value={componentScale}
+              onChange={(e) => setComponentScale(parseFloat(e.target.value))}
+              className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+            />
+            <div className="flex justify-between text-sm text-gray-500 mt-2">
+              <span>Small (70%)</span>
+              <span>Normal (100%)</span>
+              <span>Large (130%)</span>
+            </div>
+          </div>
+
+          {/* Font Size Slider */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <label className="text-lg font-semibold text-gray-700">
+                Font Size
+              </label>
+              <span className="text-lg font-bold text-blue-600">
+                {Math.round(fontScale * 100)}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0.8"
+              max="1.4"
+              step="0.05"
+              value={fontScale}
+              onChange={(e) => setFontScale(parseFloat(e.target.value))}
+              className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+            />
+            <div className="flex justify-between text-sm text-gray-500 mt-2">
+              <span>Small (80%)</span>
+              <span>Normal (100%)</span>
+              <span>Large (140%)</span>
+            </div>
+          </div>
+
+          {/* Preview Text */}
+          <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border-2 border-blue-200">
+            <p className="text-gray-600 mb-2" style={{ fontSize: `calc(0.875rem * ${fontScale})` }}>
+              Preview Text
+            </p>
+            <h3 className="font-bold text-gray-900 mb-2" style={{ fontSize: `calc(1.5rem * ${fontScale})` }}>
+              This is how your text will look
+            </h3>
+            <p className="text-gray-600" style={{ fontSize: `calc(1rem * ${fontScale})` }}>
+              Adjust the sliders above to customize the size of components and text throughout the app.
+            </p>
+          </div>
+
+          {/* Reset Button */}
+          <div className="flex justify-end mt-6">
+            <button
+              onClick={handleResetSettings}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold px-8 py-3 rounded-full transition-all"
+            >
+              Reset to Default
+            </button>
+          </div>
+        </div>
+
         {/* Action Buttons */}
         <div className="flex flex-col md:flex-row gap-4">
           <button
@@ -106,6 +193,40 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
+
+      <style jsx>{`
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+          transition: all 0.2s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+          transform: scale(1.2);
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.6);
+        }
+
+        .slider::-moz-range-thumb {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+          transition: all 0.2s ease;
+        }
+
+        .slider::-moz-range-thumb:hover {
+          transform: scale(1.2);
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.6);
+        }
+      `}</style>
     </div>
   );
 }

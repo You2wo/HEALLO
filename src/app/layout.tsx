@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { SettingsProvider } from './contexts/SettingsContext'
 
 export const metadata: Metadata = {
   title: 'Haello - Virtual Pet & Self Care',
@@ -21,7 +22,11 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <SettingsProvider>
+          {children}
+        </SettingsProvider>
+      </body>
     </html>
   )
 }

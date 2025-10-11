@@ -97,3 +97,44 @@ a:focus-visible {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
+
+/* Aspect ratio responsive scaling */
+/* Base scale for 16:10 (reference aspect ratio) */
+.aspect-scale {
+  transform-origin: top left;
+  transition: transform 0.3s ease;
+}
+
+/* For 16:9 screens (wider than 16:10) - scale down */
+@media (min-aspect-ratio: 16/9) {
+  .aspect-scale {
+    transform: scale(0.88);
+  }
+}
+
+/* For ultra-wide screens - scale down more */
+@media (min-aspect-ratio: 21/9) {
+  .aspect-scale {
+    transform: scale(0.75);
+  }
+}
+
+/* For taller screens (4:3, etc.) - keep normal or slightly smaller */
+@media (max-aspect-ratio: 4/3) {
+  .aspect-scale {
+    transform: scale(0.92);
+  }
+}
+
+/* Viewport height based scaling for very short screens */
+@media (max-height: 768px) {
+  .aspect-scale {
+    transform: scale(0.85);
+  }
+}
+
+@media (max-height: 600px) {
+  .aspect-scale {
+    transform: scale(0.75);
+  }
+}

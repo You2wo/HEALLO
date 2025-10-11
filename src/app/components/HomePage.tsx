@@ -62,7 +62,7 @@ export const HomePage = (): React.JSX.Element => {
         </header>
 
         {/* Desktop Layout - Components positioned at edges over game scene */}
-        <div className="hidden md:flex w-full justify-between items-start">
+        <div className="hidden md:flex w-full justify-between items-start aspect-scale">
           {/* Left Column - Mood Tracking & Daily Goals */}
           <div className="space-y-6 flex-shrink-0">
             <MoodTracking month="September" />
@@ -134,7 +134,7 @@ export const HomePage = (): React.JSX.Element => {
         </div>
 
         {/* Chat/Help Button - Text Bubble Style */}
-        <div className="fixed bottom-24 md:bottom-6 right-6 z-40">
+        <div className="fixed bottom-24 md:bottom-6 right-6 z-40 aspect-scale">
           <button className="bg-white hover:bg-gray-50 rounded-full px-6 py-4 flex items-center justify-center shadow-xl transition-all hover:shadow-2xl relative">
             <img 
               src="/tiny.svg" 

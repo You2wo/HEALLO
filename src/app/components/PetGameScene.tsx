@@ -106,11 +106,31 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
       };
       // ===== END CONFIGURATION =====
 
-      // Helper function to get responsive scale
-      const getResponsiveScale = (width: number, scaleConfig: { mobile: number, tablet: number, desktop: number }) => {
-        if (width < 768) return scaleConfig.mobile;
-        if (width < 1024) return scaleConfig.tablet;
-        return scaleConfig.desktop;
+      // Helper function to get responsive scale with aspect ratio consideration
+      const getResponsiveScale = (width: number, height: number, scaleConfig: { mobile: number, tablet: number, desktop: number }) => {
+        const aspectRatio = width / height;
+        let baseScale;
+        
+        if (width < 768) {
+          baseScale = scaleConfig.mobile;
+        } else if (width < 1024) {
+          baseScale = scaleConfig.tablet;
+        } else {
+          baseScale = scaleConfig.desktop;
+        }
+        
+        // Adjust scale based on aspect ratio
+        // 16:10 = 1.6, 16:9 = 1.778
+        if (aspectRatio >= 1.75) {
+          // 16:9 or wider - scale down by 12%
+          baseScale *= 0.88;
+        }
+        if (aspectRatio >= 1.85) {
+          // Ultra-wide - scale down more
+          baseScale *= 0.85;
+        }
+        
+        return baseScale;
       };
 
       // Helper function to create vignette effect
@@ -207,7 +227,7 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
           height * petConfig.position.y,
           'pet'
         );
-        const petScale = getResponsiveScale(width, petConfig.scale);
+        const petScale = getResponsiveScale(width, height, petConfig.scale);
         pet.setScale(petScale);
         pet.setDepth(petConfig.depth);
         pet.setInteractive({ useHandCursor: true });
@@ -366,8 +386,8 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
             pet.x = relativeX * width;
             pet.y = relativeY * height;
             
-            // Update pet scale based on new screen width using config
-            const petScale = getResponsiveScale(width, petConfig.scale);
+            // Update pet scale based on new screen width and height using config
+            const petScale = getResponsiveScale(width, height, petConfig.scale);
             pet.setScale(petScale);
             
             // Ensure pet stays within bounds with margin

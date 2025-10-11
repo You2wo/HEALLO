@@ -1,0 +1,172 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { Streak } from "./Streak";
+import { MoodTracking, calculateStreak } from "./MoodTracking";
+import { DailyGoals } from "./DailyGoals";
+import { PetGameScene } from "./PetGameScene";
+
+export const HomePage = (): React.JSX.Element => {
+  const [streak, setStreak] = useState(0);
+  const [showMobileGoals, setShowMobileGoals] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+
+  // Calculate streak on mount and when localStorage changes
+  useEffect(() => {
+    const updateStreak = () => {
+      setStreak(calculateStreak());
+    };
+
+    updateStreak();
+
+    // Listen for storage changes to update streak when mood data changes
+    window.addEventListener('storage', updateStreak);
+    
+    // Also listen for custom event when mood is updated in the same tab
+    window.addEventListener('moodUpdated', updateStreak);
+
+    return () => {
+      window.removeEventListener('storage', updateStreak);
+      window.removeEventListener('moodUpdated', updateStreak);
+    };
+  }, []);
+  return (
+    <main className="relative min-h-screen w-full overflow-hidden">
+      {/* Full-page Game Scene Background */}
+      <div className="absolute inset-0 w-full h-full">
+        <PetGameScene className="w-full h-full" />
+      </div>
+
+      {/* Overlay Content */}
+      <div className="relative z-10 min-h-screen p-4 md:p-8">
+        {/* Header Section */}
+        <header className="max-w-6xl mx-auto mb-8">
+          <nav className="flex items-center justify-center gap-6">
+            <button className="text-gray-600 hover:text-gray-800 transition-colors" aria-label="Settings">
+              <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+            <Link href="/" className="text-blue-600 hover:text-blue-700 transition-colors text-lg md:text-xl font-semibold">
+              Home
+            </Link>
+            <Link href="/journal" className="text-gray-900 hover:text-gray-700 transition-colors text-lg md:text-xl font-medium">
+              Journal
+            </Link>
+            <button className="text-gray-900 hover:text-gray-700 transition-colors text-lg md:text-xl font-medium">
+              About
+            </button>
+          </nav>
+        </header>
+
+        {/* Desktop Layout - Components positioned at edges over game scene */}
+        <div className="hidden md:flex w-full justify-between items-start">
+          {/* Left Column - Mood Tracking & Daily Goals */}
+          <div className="space-y-6 flex-shrink-0">
+            <MoodTracking month="September" />
+            <DailyGoals />
+          </div>
+
+          {/* Right Column - Streak */}
+          <div className="flex-shrink-0">
+            <Streak days={streak} />
+          </div>
+        </div>
+
+        {/* Mobile Sidebar Toggle Button */}
+        <button
+          onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+          className="md:hidden fixed left-0 top-1/2 -translate-y-1/2 z-40 bg-white hover:bg-gray-50 rounded-r-2xl p-3 shadow-xl transition-all"
+          aria-label="Toggle sidebar"
+        >
+          <svg
+            className={`w-6 h-6 transition-transform ${showMobileSidebar ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+
+        {/* Mobile Sidebar */}
+        <div
+          className={`md:hidden fixed left-0 top-0 h-full w-[85%] max-w-sm bg-white shadow-2xl z-30 transition-transform duration-300 overflow-y-auto ${
+            showMobileSidebar ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          <div className="p-6 space-y-6">
+            {/* Close button */}
+            <button
+              onClick={() => setShowMobileSidebar(false)}
+              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="Close sidebar"
+            >
+              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 mt-8">Dashboard</h2>
+            
+            <MoodTracking month="September" />
+            <Streak days={streak} />
+          </div>
+        </div>
+
+        {/* Sidebar Overlay */}
+        {showMobileSidebar && (
+          <div
+            className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-20"
+            onClick={() => setShowMobileSidebar(false)}
+          />
+        )}
+
+        {/* Mobile Bottom Sheet - Daily Goals */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-30">
+          {/* Bottom Sheet Handle */}
+          <button
+            onClick={() => setShowMobileGoals(!showMobileGoals)}
+            className="w-full bg-white rounded-t-3xl shadow-2xl px-6 py-4 flex items-center justify-between"
+          >
+            <h2 className="text-xl font-bold text-gray-900">Daily Goals</h2>
+            <svg
+              className={`w-6 h-6 transition-transform ${showMobileGoals ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+            </svg>
+          </button>
+          
+          {/* Bottom Sheet Content */}
+          <div
+            className={`bg-white transition-all duration-300 overflow-hidden ${
+              showMobileGoals ? 'max-h-[70vh]' : 'max-h-0'
+            }`}
+          >
+            <div className="px-6 pb-6 overflow-y-auto max-h-[70vh]">
+              <DailyGoals />
+            </div>
+          </div>
+        </div>
+
+        {/* Chat/Help Button - Text Bubble Style */}
+        <div className="fixed bottom-24 md:bottom-6 right-6 z-40">
+          <button className="bg-white hover:bg-gray-50 rounded-full px-6 py-4 flex items-center justify-center shadow-xl transition-all hover:shadow-2xl relative">
+            <img 
+              src="/tiny.svg" 
+              alt="Chat" 
+              className="w-8 h-10 md:w-10 md:h-12"
+            />
+            {/* Speech bubble tail */}
+            <div className="absolute -bottom-2 right-6 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[12px] border-t-white"></div>
+          </button>
+        </div>
+      </div>
+    </main>
+  );
+};

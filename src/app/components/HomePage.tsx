@@ -32,14 +32,14 @@ export const HomePage = (): React.JSX.Element => {
     };
   }, []);
   return (
-    <main className="relative min-h-screen w-full overflow-hidden">
+    <main className="relative h-screen w-full overflow-hidden">
       {/* Full-page Game Scene Background */}
       <div className="absolute inset-0 w-full h-full">
         <PetGameScene className="w-full h-full" />
       </div>
 
       {/* Overlay Content */}
-      <div className="relative z-10 min-h-screen p-4 md:p-8">
+      <div className="relative z-10 h-screen overflow-hidden p-4 md:p-8">
         {/* Header Section */}
         <header className="max-w-6xl mx-auto mb-8">
           <nav className="flex items-center justify-center gap-6">
@@ -62,15 +62,15 @@ export const HomePage = (): React.JSX.Element => {
         </header>
 
         {/* Desktop Layout - Components positioned at edges over game scene */}
-        <div className="hidden md:flex w-full justify-between items-start aspect-scale">
+        <div className="hidden md:flex w-full max-w-[1920px] mx-auto justify-between items-start aspect-scale">
           {/* Left Column - Mood Tracking & Daily Goals */}
           <div className="space-y-6 flex-shrink-0">
             <MoodTracking month="September" />
             <DailyGoals />
           </div>
 
-          {/* Right Column - Streak */}
-          <div className="flex-shrink-0">
+          {/* Right Column - Streak - positioned close to right edge */}
+          <div className="flex-shrink-0 mr-0">
             <Streak days={streak} />
           </div>
         </div>

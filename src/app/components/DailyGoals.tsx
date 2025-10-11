@@ -146,7 +146,7 @@ export const DailyGoals: React.FC<DailyGoalsProps> = ({
       {/* Modal */}
       {isModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-fadeIn overflow-y-auto"
           onClick={handleCloseModal}
         >
           {/* Backdrop with blur */}
@@ -154,7 +154,7 @@ export const DailyGoals: React.FC<DailyGoalsProps> = ({
           
           {/* Modal Content */}
           <div
-            className="relative bg-white rounded-3xl shadow-2xl max-w-lg w-full p-8 animate-popUp"
+            className="relative bg-white rounded-3xl shadow-2xl max-w-lg w-full p-8 animate-popUp my-8"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}

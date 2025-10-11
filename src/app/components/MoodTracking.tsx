@@ -138,7 +138,7 @@ const MoodSelector: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-50 overflow-auto" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-white z-[9999] overflow-auto" onClick={(e) => e.stopPropagation()}>
       <div className="min-h-screen w-full">
         {/* Close button */}
         <button

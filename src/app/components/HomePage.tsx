@@ -64,24 +64,30 @@ export const HomePage = (): React.JSX.Element => {
         </header>
 
         {/* Desktop Layout - Components positioned at edges over game scene */}
-        <div className="hidden md:block w-full">
+        <div className="hidden md:block w-full relative">
+          {/* Left Column - Mood Tracking & Daily Goals */}
           <div 
-            className="flex justify-between items-start aspect-scale"
+            className="absolute left-0 top-0 space-y-6 aspect-scale"
             style={{ 
               transform: `scale(${componentScale})`,
-              transformOrigin: 'top left'
+              transformOrigin: 'top left',
+              fontSize: `${fontScale}rem`
             }}
           >
-            {/* Left Column - Mood Tracking & Daily Goals */}
-            <div className="space-y-6 flex-shrink-0" style={{ fontSize: `${fontScale}rem` }}>
-              <MoodTracking month="September" />
-              <DailyGoals />
-            </div>
+            <MoodTracking month="September" />
+            <DailyGoals />
+          </div>
 
-            {/* Right Column - Streak - positioned at far right edge */}
-            <div className="flex-shrink-0" style={{ fontSize: `${fontScale}rem` }}>
-              <Streak days={streak} />
-            </div>
+          {/* Right Column - Streak - positioned at far right edge */}
+          <div 
+            className="absolute right-0 top-0 aspect-scale"
+            style={{ 
+              transform: `scale(${componentScale})`,
+              transformOrigin: 'top right',
+              fontSize: `${fontScale}rem`
+            }}
+          >
+            <Streak days={streak} />
           </div>
         </div>
 

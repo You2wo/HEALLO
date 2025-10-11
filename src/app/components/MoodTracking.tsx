@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface MoodTrackingProps {
   month?: string;
@@ -138,7 +139,7 @@ const MoodSelector: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-[9999] overflow-auto" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-white z-[9999] overflow-auto" onClick={(e) => e.stopPropagation()} style={{ transform: 'none' }}>
       <div className="min-h-screen w-full">
         {/* Close button */}
         <button
@@ -313,6 +314,12 @@ export const MoodTracking: React.FC<MoodTrackingProps> = () => {
   const [moodData, setMoodData] = useState<Record<string, MoodType>>({});
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [showSelector, setShowSelector] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
@@ -438,8 +445,8 @@ export const MoodTracking: React.FC<MoodTrackingProps> = () => {
         ))}
       </div>
 
-      {/* Mood Selector Modal */}
-      {showSelector && selectedDay !== null && (
+      {/* Mood Selector Modal - Rendered via Portal */}
+      {showSelector && selectedDay !== null && mounted && createPortal(
         <MoodSelector
           onSelect={handleMoodSelect}
           onClose={() => {
@@ -447,7 +454,8 @@ export const MoodTracking: React.FC<MoodTrackingProps> = () => {
             setSelectedDay(null);
           }}
           selectedDate={new Date(currentYear, currentMonth, selectedDay)}
-        />
+        />,
+        document.body
       )}
     </section>
   );

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface DailyGoal {
   id: string;
@@ -44,6 +45,12 @@ export const DailyGoals: React.FC<DailyGoalsProps> = ({
   const [routineName, setRoutineName] = useState("");
   const [description, setDescription] = useState("");
   const [period, setPeriod] = useState("Daily");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   const toggleGoal = (id: string) => {
     setGoals(goals.map(goal => 
@@ -143,11 +150,12 @@ export const DailyGoals: React.FC<DailyGoalsProps> = ({
       </div>
       </div>
 
-      {/* Modal */}
-      {isModalOpen && (
+      {/* Modal - Rendered via Portal */}
+      {isModalOpen && mounted && createPortal(
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-fadeIn overflow-y-auto"
           onClick={handleCloseModal}
+          style={{ transform: 'none' }}
         >
           {/* Backdrop with blur */}
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
@@ -269,7 +277,8 @@ export const DailyGoals: React.FC<DailyGoalsProps> = ({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <style jsx>{`

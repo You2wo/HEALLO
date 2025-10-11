@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface StreakProps {
   days?: number;
@@ -8,6 +9,12 @@ interface StreakProps {
 
 export const Streak: React.FC<StreakProps> = ({ days = 0 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   const handleStreakClick = () => {
     setIsModalOpen(true);
@@ -50,11 +57,12 @@ export const Streak: React.FC<StreakProps> = ({ days = 0 }) => {
         </button>
       </section>
 
-      {/* Modal */}
-      {isModalOpen && (
+      {/* Modal - Rendered via Portal */}
+      {isModalOpen && mounted && createPortal(
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-fadeIn overflow-y-auto"
           onClick={handleCloseModal}
+          style={{ transform: 'none' }}
         >
           {/* Backdrop with blur */}
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
@@ -111,7 +119,8 @@ export const Streak: React.FC<StreakProps> = ({ days = 0 }) => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <style jsx>{`

@@ -55,15 +55,11 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
       };
 
       let pet: Phaser.Physics.Arcade.Sprite;
-      let cursors: Phaser.Types.Input.Keyboard.CursorKeys;
       let petState = 'idle';
       let lastInteraction = Date.now();
-      let particles: Phaser.GameObjects.Particles.ParticleEmitter;
       let statsText: Phaser.GameObjects.Text;
-      let interactionText: Phaser.GameObjects.Text;
       let currentStats = { ...petStats };
       let environmentImage: Phaser.GameObjects.Image;
-      let vignetteGraphics: Phaser.GameObjects.Graphics | null;
       let previousWidth = window.innerWidth;
       let previousHeight = window.innerHeight;
 
@@ -92,16 +88,6 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
             y: 0.5   // center vertically
           },
           depth: 0
-        },
-        // Vignette configuration
-        vignette: {
-          enabled: true,
-          maxRadiusMultiplier: 0.8,  // Multiplier for max radius (0.8 = 80% of screen)
-          minRadiusMultiplier: 0.3,  // Multiplier for min radius (0.3 = 30% of screen)
-          steps: 5,                  // Number of gradient steps (higher = smoother)
-          maxAlpha: 0.6,              // Maximum opacity at edges (0-1)
-          depth: 1000,                // Render depth (higher = on top)
-          blendMode: 'NORMAL'       // Blend mode: 'MULTIPLY', 'NORMAL', 'ADD', etc.
         }
       };
       // ===== END CONFIGURATION =====
@@ -133,64 +119,11 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
         return baseScale;
       };
 
-      // Helper function to create vignette effect
-      const createVignette = (scene: Phaser.Scene, width: number, height: number) => {
-        const vignetteConfig = ASSET_CONFIG.vignette;
-        
-        // Check if vignette is enabled
-        if (!vignetteConfig.enabled) {
-          return null;
-        }
-        
-        const graphics = scene.add.graphics();
-        
-        // Create radial gradient vignette effect using config
-        const centerX = width / 2;
-        const centerY = height / 2;
-        const maxRadius = Math.max(width, height) * vignetteConfig.maxRadiusMultiplier;
-        const minRadius = Math.max(width, height) * vignetteConfig.minRadiusMultiplier;
-        
-        // First fill the entire screen with white at max alpha
-        graphics.fillStyle(0xffffff, vignetteConfig.maxAlpha);
-        graphics.fillRect(0, 0, width, height);
-        
-        // Then draw circles from outside to inside, decreasing alpha to create clear center
-        for (let i = vignetteConfig.steps - 1; i >= 0; i--) {
-          const progress = i / vignetteConfig.steps;
-          const radius = minRadius + (maxRadius - minRadius) * progress;
-          const alpha = (1 - Math.pow(progress, 2)) * vignetteConfig.maxAlpha; // Inverted for clear center
-          
-          graphics.fillStyle(0xffffff, alpha);
-          graphics.fillCircle(centerX, centerY, radius);
-        }
-        
-        // Set depth and blend mode from config
-        graphics.setDepth(vignetteConfig.depth);
-        
-        // Map blend mode string to Phaser blend mode
-        const blendModes: { [key: string]: number } = {
-          'MULTIPLY': Phaser.BlendModes.MULTIPLY,
-          'NORMAL': Phaser.BlendModes.NORMAL,
-          'ADD': Phaser.BlendModes.ADD,
-          'SCREEN': Phaser.BlendModes.SCREEN,
-          'OVERLAY': Phaser.BlendModes.OVERLAY
-        };
-        graphics.setBlendMode(blendModes[vignetteConfig.blendMode] || Phaser.BlendModes.MULTIPLY);
-        
-        return graphics;
-      };
-
+      
       function preload(this: Phaser.Scene) {
         // Load assets using configuration
         this.load.svg('pet', '/Group 79.svg', ASSET_CONFIG.pet.loadSize);
         this.load.svg('environment', '/enviroment.svg', ASSET_CONFIG.environment.loadSize);
-        
-        // Create a simple particle texture
-        const graphics = this.add.graphics();
-        graphics.fillStyle(0xffffff, 1);
-        graphics.fillCircle(4, 4, 4);
-        graphics.generateTexture('particle', 8, 8);
-        graphics.destroy();
       }
 
       function create(this: Phaser.Scene) {
@@ -234,26 +167,6 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
         pet.setCollideWorldBounds(true);
         pet.setBounce(0.1);
 
-        // Create particle emitter for interactions
-        particles = this.add.particles(0, 0, 'particle', {
-          speed: { min: 50, max: 150 },
-          scale: { start: 1, end: 0 },
-          alpha: { start: 1, end: 0 },
-          lifespan: 600,
-          tint: [0xfbbf24, 0x60a5fa, 0xf472b6],
-          emitting: false
-        });
-
-        // Add interaction text (hidden by default since we have UI overlay)
-        interactionText = this.add.text(width / 2, 100, '', {
-          fontSize: '24px',
-          color: '#3b82f6',
-          fontFamily: 'Poppins, sans-serif',
-          align: 'center'
-        });
-        interactionText.setOrigin(0.5);
-        interactionText.setAlpha(0);
-
         // Stats display removed - no longer showing on screen
         statsText = this.add.text(0, 0, '', {
           fontSize: '16px',
@@ -264,31 +177,6 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
         });
         statsText.setAlpha(0); // Hidden
 
-        // Pet click interaction
-        pet.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-          petState = 'excited';
-          pet.setVelocity(
-            Phaser.Math.Between(-100, 100),
-            Phaser.Math.Between(-200, -100)
-          );
-          
-          // Emit particles
-          particles.setPosition(pet.x, pet.y);
-          particles.explode(20);
-
-          // Update stats
-          updatePetStats('happiness', 5);
-          updatePetStats('energy', -2);
-          
-          lastInteraction = Date.now();
-          interactionText.setText('Yay! 🎉');
-          
-          setTimeout(() => {
-            petState = 'idle';
-            interactionText.setText('Click or drag your pet!');
-          }, 1000);
-        });
-
         // Pet drag interaction
         this.input.setDraggable(pet);
         
@@ -297,10 +185,6 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
             pet.x = dragX;
             pet.y = dragY;
             petState = 'dragging';
-            
-            // Trail effect while dragging
-            particles.setPosition(pet.x, pet.y);
-            particles.emitParticle(2);
           }
         });
 
@@ -311,11 +195,6 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
           }
         });
 
-        // Keyboard controls
-        if (this.input.keyboard) {
-          cursors = this.input.keyboard.createCursorKeys();
-        }
-
         // Add floating animation
         this.tweens.add({
           targets: pet,
@@ -325,26 +204,6 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
           repeat: -1,
           ease: 'Sine.easeInOut'
         });
-
-        // Add idle blinking animation
-        this.time.addEvent({
-          delay: 3000,
-          callback: () => {
-            if (petState === 'idle') {
-              this.tweens.add({
-                targets: pet,
-                alpha: 0.7,
-                duration: 100,
-                yoyo: true,
-                repeat: 1
-              });
-            }
-          },
-          loop: true
-        });
-
-        // Create vignette effect
-        vignetteGraphics = createVignette(this, width, height);
 
         // Handle resize events
         this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
@@ -406,39 +265,11 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
           // Update previous dimensions for next resize
           previousWidth = width;
           previousHeight = height;
-          
-          // Update interaction text position
-          if (interactionText) {
-            interactionText.setPosition(width / 2, 100);
-          }
-
-          // Recreate vignette on resize
-          if (vignetteGraphics) {
-            vignetteGraphics.destroy();
-            vignetteGraphics = createVignette(this, width, height);
-          }
         });
       }
 
       function update(this: Phaser.Scene) {
         if (!pet) return;
-
-        // Keyboard movement
-        if (cursors) {
-          if (cursors.left.isDown) {
-            pet.setVelocityX(-200);
-            pet.setFlipX(true);
-          } else if (cursors.right.isDown) {
-            pet.setVelocityX(200);
-            pet.setFlipX(false);
-          } else if (petState !== 'dragging') {
-            pet.setVelocityX(pet.body!.velocity.x * 0.95);
-          }
-
-          if (cursors.up.isDown && pet.body!.touching.down) {
-            pet.setVelocityY(-300);
-          }
-        }
 
         // Gradually decrease stats over time
         const now = Date.now();

@@ -26,8 +26,6 @@
 
 html {
   scroll-behavior: smooth;
-  overflow: hidden;
-  height: 100%;
 }
 
 body {
@@ -37,10 +35,6 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow: hidden;
-  height: 100%;
-  position: fixed;
-  width: 100%;
 }
 
 /* Mobile-first responsive utilities */

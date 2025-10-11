@@ -176,14 +176,28 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
       function create(this: Phaser.Scene) {
         const { width, height } = this.scale;
 
-        // Add environment image using config
+        // Add environment image using config with aspect ratio preservation
         const envConfig = ASSET_CONFIG.environment;
         environmentImage = this.add.image(
           width * envConfig.position.x,
           height * envConfig.position.y,
           'environment'
         );
-        environmentImage.setDisplaySize(width, height);
+        
+        // Calculate scale to cover viewport while maintaining aspect ratio
+        const imageAspect = ASSET_CONFIG.environment.loadSize.width / ASSET_CONFIG.environment.loadSize.height;
+        const screenAspect = width / height;
+        let scale;
+        
+        if (screenAspect > imageAspect) {
+          // Screen is wider than image - scale to width
+          scale = width / ASSET_CONFIG.environment.loadSize.width;
+        } else {
+          // Screen is taller than image - scale to height
+          scale = height / ASSET_CONFIG.environment.loadSize.height;
+        }
+        
+        environmentImage.setScale(scale);
         environmentImage.setDepth(envConfig.depth);
 
         // Create pet sprite using config
@@ -316,14 +330,28 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
         this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
           const { width, height } = gameSize;
           
-          // Resize and reposition environment using config
+          // Resize and reposition environment using config with aspect ratio preservation
           if (environmentImage) {
             const envConfig = ASSET_CONFIG.environment;
             environmentImage.setPosition(
               width * envConfig.position.x,
               height * envConfig.position.y
             );
-            environmentImage.setDisplaySize(width, height);
+            
+            // Calculate scale to cover viewport while maintaining aspect ratio
+            const imageAspect = ASSET_CONFIG.environment.loadSize.width / ASSET_CONFIG.environment.loadSize.height;
+            const screenAspect = width / height;
+            let scale;
+            
+            if (screenAspect > imageAspect) {
+              // Screen is wider than image - scale to width
+              scale = width / ASSET_CONFIG.environment.loadSize.width;
+            } else {
+              // Screen is taller than image - scale to height
+              scale = height / ASSET_CONFIG.environment.loadSize.height;
+            }
+            
+            environmentImage.setScale(scale);
           }
           
           // Reposition and rescale pet when resolution changes

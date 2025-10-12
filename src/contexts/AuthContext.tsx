@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = localStorage.getItem('token');
       if (token) {
         const response = await authApi.getMe();
-        setUser(response.user);
+        setUser(response.user as unknown as User);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -48,12 +48,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const response = await authApi.login({ email, password });
-    setUser(response.user);
+    setUser(response.user as unknown as User);
   };
 
   const register = async (username: string, email: string, password: string, nickname?: string) => {
     const response = await authApi.register({ username, email, password, nickname });
-    setUser(response.user);
+    setUser(response.user as unknown as User);
   };
 
   const logout = () => {

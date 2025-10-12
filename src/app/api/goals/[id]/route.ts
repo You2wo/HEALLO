@@ -5,8 +5,9 @@ import { getUserFromRequest } from '@/lib/auth';
 // GET a specific goal
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const userPayload = getUserFromRequest(request);
     
@@ -19,7 +20,7 @@ export async function GET(
 
     const goal = await prisma.goal.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: userPayload.userId,
       }
     });
@@ -45,8 +46,9 @@ export async function GET(
 // PUT update a goal
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const userPayload = getUserFromRequest(request);
     
@@ -63,7 +65,7 @@ export async function PUT(
     // Check if goal exists and belongs to user
     const existingGoal = await prisma.goal.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: userPayload.userId,
       }
     });
@@ -75,7 +77,7 @@ export async function PUT(
       );
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
     if (icon !== undefined) updateData.icon = icon;
@@ -86,7 +88,7 @@ export async function PUT(
     }
 
     const goal = await prisma.goal.update({
-      where: { id: params.id },
+      where: { id: id },
       data: updateData,
     });
 
@@ -107,8 +109,9 @@ export async function PUT(
 // DELETE a goal
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const userPayload = getUserFromRequest(request);
     
@@ -122,7 +125,7 @@ export async function DELETE(
     // Check if goal exists and belongs to user
     const existingGoal = await prisma.goal.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: userPayload.userId,
       }
     });
@@ -135,7 +138,7 @@ export async function DELETE(
     }
 
     await prisma.goal.delete({
-      where: { id: params.id }
+      where: { id: id }
     });
 
     return NextResponse.json({
@@ -154,8 +157,9 @@ export async function DELETE(
 // PATCH toggle goal completion
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const userPayload = getUserFromRequest(request);
     
@@ -169,7 +173,7 @@ export async function PATCH(
     // Check if goal exists and belongs to user
     const existingGoal = await prisma.goal.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: userPayload.userId,
       }
     });
@@ -182,7 +186,7 @@ export async function PATCH(
     }
 
     const goal = await prisma.goal.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         completed: !existingGoal.completed,
         completedAt: !existingGoal.completed ? new Date() : null,

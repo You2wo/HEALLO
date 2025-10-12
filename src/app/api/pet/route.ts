@@ -62,7 +62,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { petName, petType, petLevel, petXp } = body;
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (petName !== undefined) updateData.petName = petName;
     if (petType !== undefined) updateData.petType = petType;
     if (petLevel !== undefined) updateData.petLevel = petLevel;

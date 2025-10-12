@@ -39,7 +39,7 @@ export const Streak: React.FC<StreakProps> = () => {
   const loadStreak = async () => {
     try {
       const response = await streakApi.get();
-      setDays(response.streak.currentStreak);
+      setDays(response.streak.currentStreak as number);
     } catch (error) {
       console.error("Failed to load streak:", error);
     }

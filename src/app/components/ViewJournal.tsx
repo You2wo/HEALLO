@@ -16,6 +16,13 @@ interface JournalEntry {
   monthName: string;
 }
 
+interface JournalData {
+  id: string;
+  date: string;
+  mood: string;
+  notes: string | null;
+}
+
 const getDaysInMonth = (year: number, month: number): number => {
   return new Date(year, month + 1, 0).getDate();
 };
@@ -23,8 +30,7 @@ const getDaysInMonth = (year: number, month: number): number => {
 export const ViewJournal: React.FC = () => {
   const [currentDate] = useState(new Date());
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
-  const [journals, setJournals] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [journals, setJournals] = useState<JournalData[]>([]);
   const { isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -51,14 +57,11 @@ export const ViewJournal: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated) {
       loadJournals();
-    } else {
-      setLoading(false);
     }
   }, [currentYear, currentMonth, isAuthenticated]);
 
   const loadJournals = async () => {
     try {
-      setLoading(true);
       const response = await journalApi.getAll({
         month: currentMonth + 1,
         year: currentYear
@@ -72,7 +75,7 @@ export const ViewJournal: React.FC = () => {
         setSelectedEntry({
           id: firstJournal.id,
           date: firstJournal.date,
-          mood: firstJournal.mood,
+          mood: firstJournal.mood as 'good' | 'neutral' | 'bad' | 'stress' | 'meh',
           notes: firstJournal.notes || "No notes for this day.",
           dayNumber: date.getDate(),
           dayName: dayNames[date.getDay()],
@@ -81,8 +84,6 @@ export const ViewJournal: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load journals:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -115,7 +116,7 @@ export const ViewJournal: React.FC = () => {
       setSelectedEntry({
         id: journal.id,
         date: journal.date,
-        mood: journal.mood,
+        mood: journal.mood as 'good' | 'neutral' | 'bad' | 'stress' | 'meh',
         notes: journal.notes || "No notes for this day.",
         dayNumber: dayNumber,
         dayName: dayNames[date.getDay()],

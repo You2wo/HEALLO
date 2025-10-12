@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const completed = searchParams.get('completed');
 
-    let whereClause: any = { userId: userPayload.userId };
+    const whereClause: Record<string, unknown> = { userId: userPayload.userId };
 
     if (completed !== null) {
       whereClause.completed = completed === 'true';

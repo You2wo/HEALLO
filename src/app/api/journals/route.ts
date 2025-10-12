@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const month = searchParams.get('month');
     const year = searchParams.get('year');
 
-    let whereClause: any = { userId: userPayload.userId };
+    const whereClause: Record<string, unknown> = { userId: userPayload.userId };
 
     // Filter by month and year if provided
     if (month && year) {
@@ -173,7 +173,7 @@ async function updateStreak(userId: string) {
 
   // Start counting from today or yesterday
   let currentStreak = 0;
-  let checkDate = new Date(today);
+  const checkDate = new Date(today);
   
   // If no entry for today, start from yesterday
   if (!uniqueDateStrings.includes(todayString)) {

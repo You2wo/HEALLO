@@ -40,9 +40,9 @@ async function apiRequest<T>(
 ): Promise<T> {
   const token = getToken();
   
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...options.headers,
+    ...(options.headers as Record<string, string>),
   };
 
   if (token) {
@@ -71,7 +71,7 @@ export const authApi = {
     password: string;
     nickname?: string;
   }) => {
-    const response = await apiRequest<{ user: any; token: string; message: string }>(
+    const response = await apiRequest<{ user: Record<string, unknown>; token: string; message: string }>(
       '/api/auth/register',
       {
         method: 'POST',
@@ -85,7 +85,7 @@ export const authApi = {
   },
 
   login: async (credentials: { email: string; password: string }) => {
-    const response = await apiRequest<{ user: any; token: string; message: string }>(
+    const response = await apiRequest<{ user: Record<string, unknown>; token: string; message: string }>(
       '/api/auth/login',
       {
         method: 'POST',
@@ -103,7 +103,7 @@ export const authApi = {
   },
 
   getMe: async () => {
-    return apiRequest<{ user: any }>('/api/auth/me');
+    return apiRequest<{ user: Record<string, unknown> }>('/api/auth/me');
   },
 };
 
@@ -115,12 +115,14 @@ export const journalApi = {
     if (params?.year) queryParams.append('year', params.year.toString());
     
     const query = queryParams.toString();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return apiRequest<{ journals: any[] }>(
       `/api/journals${query ? `?${query}` : ''}`
     );
   },
 
   getById: async (id: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return apiRequest<{ journal: any }>(`/api/journals/${id}`);
   },
 
@@ -129,6 +131,7 @@ export const journalApi = {
     mood: string;
     notes?: string;
   }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return apiRequest<{ journal: any; message: string }>('/api/journals', {
       method: 'POST',
       body: JSON.stringify(journalData),
@@ -136,6 +139,7 @@ export const journalApi = {
   },
 
   update: async (id: string, journalData: { mood?: string; notes?: string }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return apiRequest<{ journal: any; message: string }>(`/api/journals/${id}`, {
       method: 'PUT',
       body: JSON.stringify(journalData),
@@ -157,12 +161,14 @@ export const moodApi = {
     if (params?.year) queryParams.append('year', params.year.toString());
     
     const query = queryParams.toString();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return apiRequest<{ moods: any[] }>(
       `/api/moods${query ? `?${query}` : ''}`
     );
   },
 
   save: async (moodData: { date: string; mood: string }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return apiRequest<{ mood: any; message: string }>('/api/moods', {
       method: 'POST',
       body: JSON.stringify(moodData),
@@ -179,12 +185,14 @@ export const goalApi = {
     }
     
     const query = queryParams.toString();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return apiRequest<{ goals: any[] }>(
       `/api/goals${query ? `?${query}` : ''}`
     );
   },
 
   getById: async (id: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return apiRequest<{ goal: any }>(`/api/goals/${id}`);
   },
 
@@ -194,6 +202,7 @@ export const goalApi = {
     icon?: string;
     period?: string;
   }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return apiRequest<{ goal: any; message: string }>('/api/goals', {
       method: 'POST',
       body: JSON.stringify(goalData),
@@ -210,6 +219,7 @@ export const goalApi = {
       completed?: boolean;
     }
   ) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return apiRequest<{ goal: any; message: string }>(`/api/goals/${id}`, {
       method: 'PUT',
       body: JSON.stringify(goalData),
@@ -217,6 +227,7 @@ export const goalApi = {
   },
 
   toggle: async (id: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return apiRequest<{ goal: any; message: string }>(`/api/goals/${id}`, {
       method: 'PATCH',
     });
@@ -232,14 +243,14 @@ export const goalApi = {
 // Streak API
 export const streakApi = {
   get: async () => {
-    return apiRequest<{ streak: any }>('/api/streak');
+    return apiRequest<{ streak: Record<string, unknown> }>('/api/streak');
   },
 };
 
 // Pet API
 export const petApi = {
   get: async () => {
-    return apiRequest<{ petSettings: any }>('/api/pet');
+    return apiRequest<{ petSettings: Record<string, unknown> }>('/api/pet');
   },
 
   update: async (petData: {
@@ -248,7 +259,7 @@ export const petApi = {
     petLevel?: number;
     petXp?: number;
   }) => {
-    return apiRequest<{ petSettings: any; message: string }>('/api/pet', {
+    return apiRequest<{ petSettings: Record<string, unknown>; message: string }>('/api/pet', {
       method: 'PUT',
       body: JSON.stringify(petData),
     });

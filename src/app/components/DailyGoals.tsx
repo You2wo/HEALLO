@@ -21,6 +21,8 @@ interface DailyGoalsProps {
 export const DailyGoals: React.FC<DailyGoalsProps> = () => {
   const [goals, setGoals] = useState<DailyGoal[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [routineName, setRoutineName] = useState("");
   const [description, setDescription] = useState("");
   const [period, setPeriod] = useState("Daily");
@@ -69,11 +71,24 @@ export const DailyGoals: React.FC<DailyGoalsProps> = () => {
   };
 
   const handleOpenModal = () => {
+    setIsEditMode(false);
+    setEditingGoalId(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (goal: DailyGoal) => {
+    setIsEditMode(true);
+    setEditingGoalId(goal.id);
+    setRoutineName(goal.title);
+    setDescription(goal.description || "");
+    setPeriod(goal.period || "Daily");
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+    setIsEditMode(false);
+    setEditingGoalId(null);
     // Reset form
     setRoutineName("");
     setDescription("");
@@ -84,12 +99,22 @@ export const DailyGoals: React.FC<DailyGoalsProps> = () => {
     if (!routineName.trim()) return;
 
     try {
-      await goalApi.create({
-        title: routineName,
-        description: description,
-        icon: "🌱",
-        period: period,
-      });
+      if (isEditMode && editingGoalId) {
+        // Update existing goal
+        await goalApi.update(editingGoalId, {
+          title: routineName,
+          description: description,
+          period: period,
+        });
+      } else {
+        // Create new goal
+        await goalApi.create({
+          title: routineName,
+          description: description,
+          icon: "🌱",
+          period: period,
+        });
+      }
       
       // Reload goals
       await loadGoals();
@@ -97,8 +122,21 @@ export const DailyGoals: React.FC<DailyGoalsProps> = () => {
       // Close modal and reset form
       handleCloseModal();
     } catch (error) {
-      console.error("Failed to create goal:", error);
-      alert("Failed to create goal. Please try again.");
+      console.error(`Failed to ${isEditMode ? 'update' : 'create'} goal:`, error);
+      alert(`Failed to ${isEditMode ? 'update' : 'create'} goal. Please try again.`);
+    }
+  };
+
+  const handleDeleteGoal = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this goal?")) return;
+
+    try {
+      await goalApi.delete(id);
+      // Reload goals
+      await loadGoals();
+    } catch (error) {
+      console.error("Failed to delete goal:", error);
+      alert("Failed to delete goal. Please try again.");
     }
   };
 
@@ -163,7 +201,34 @@ export const DailyGoals: React.FC<DailyGoalsProps> = () => {
                     {goal.title}
                     {goal.icon && <span className="text-lg">{goal.icon}</span>}
                   </h3>
-                  <span className="text-sm text-blue-500 font-medium flex-shrink-0">today</span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-sm text-blue-500 font-medium">today</span>
+                    {/* Edit Button */}
+                    <button
+                      onClick={() => handleOpenEditModal(goal)}
+                      className="text-blue-500 hover:text-blue-700 transition-colors p-1"
+                      aria-label="Edit goal"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+                    {/* Delete Button */}
+                    <button
+                      onClick={() => handleDeleteGoal(goal.id)}
+                      className="text-red-500 hover:text-red-700 transition-colors p-1"
+                      aria-label="Delete goal"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 6h18" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        <line x1="10" y1="11" x2="10" y2="17" />
+                        <line x1="14" y1="11" x2="14" y2="17" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 
                 {goal.description && !goal.completed && (
@@ -218,7 +283,7 @@ export const DailyGoals: React.FC<DailyGoalsProps> = () => {
             {/* Modal Content */}
             <div className="pt-2">
               <h2 className="text-3xl font-bold text-blue-600 mb-8">
-                Let&apos;s make a new routine!
+                {isEditMode ? "Edit your routine!" : "Let's make a new routine!"}
               </h2>
 
               {/* Routine Name Input */}
@@ -300,7 +365,7 @@ export const DailyGoals: React.FC<DailyGoalsProps> = () => {
                   disabled={!routineName.trim()}
                   className="bg-gradient-to-r from-blue-600 to-blue-400 text-white font-semibold text-lg px-10 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
-                  Save Routine
+                  {isEditMode ? "Update Routine" : "Save Routine"}
                 </button>
               </div>
             </div>

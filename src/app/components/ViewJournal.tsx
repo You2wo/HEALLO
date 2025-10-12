@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { journalApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -24,7 +25,8 @@ export const ViewJournal: React.FC = () => {
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [journals, setJournals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const router = useRouter();
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
@@ -37,6 +39,13 @@ export const ViewJournal: React.FC = () => {
   ];
 
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  // Redirect to splash if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/splash');
+    }
+  }, [isAuthenticated, authLoading, router]);
 
   // Load journal data from backend
   useEffect(() => {
@@ -192,6 +201,15 @@ export const ViewJournal: React.FC = () => {
       </div>
     ));
   };
+
+  // Show loading state while checking authentication or redirecting
+  if (authLoading || !isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-xl text-gray-600">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white p-4 md:p-8">

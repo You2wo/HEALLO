@@ -27,7 +27,7 @@ export default function SplashScreen() {
 
       {/* Main Content Container with Gradient */}
       <div className="flex-1 flex items-center justify-center">
-        <div className="bg-gradient-to-br from-blue-100 via-blue-200 to-blue-400 rounded-3xl md:rounded-[3rem] shadow-2xl p-8 md:p-16 w-full max-w-7xl">
+        <div className="bg-gradient-to-br from-blue-200 via-blue-300 to-blue-400 rounded-3xl md:rounded-[3rem] shadow-2xl p-8 md:p-16 w-full max-w-7xl">
           <div className="flex flex-col md:flex-row items-center justify-center gap-12 md:gap-20">
           {/* Left Side - Pet Character */}
           <div className="flex-shrink-0">
@@ -42,9 +42,11 @@ export default function SplashScreen() {
           <div className="flex flex-col items-center md:items-start text-center md:text-left">
             {/* Heallo Logo/Title */}
             <div className="mb-8">
-              <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold text-blue-600 mb-2">
-                Heallö
-              </h1>
+              <img 
+                src="/textlogo.svg" 
+                alt="Heallo" 
+                className="h-12 md:h-16 lg:h-20 mb-3"
+              />
               <p className="text-blue-600 text-xl md:text-2xl">
                 Say hello to <span className="italic">healing</span>
               </p>
@@ -63,12 +65,12 @@ export default function SplashScreen() {
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Link href="/login">
-                <button className="w-full sm:w-44 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg transition-all hover:shadow-xl">
+                <button className="w-full sm:w-44 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg transition-all hover:shadow-xl">
                   Login
                 </button>
               </Link>
               <Link href="/register">
-                <button className="w-full sm:w-44 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg transition-all hover:shadow-xl">
+                <button className="w-full sm:w-44 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg transition-all hover:shadow-xl">
                   Register
                 </button>
               </Link>

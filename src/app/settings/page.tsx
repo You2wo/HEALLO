@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSettings } from "../contexts/SettingsContext";
@@ -9,8 +9,15 @@ import { useAuth } from "@/contexts/AuthContext";
 export default function SettingsPage() {
   const [nickname, setNickname] = useState("");
   const { componentScale, fontScale, setComponentScale, setFontScale } = useSettings();
-  const { logout } = useAuth();
+  const { logout, isAuthenticated, loading } = useAuth();
   const router = useRouter();
+
+  // Redirect to splash if not authenticated
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push('/splash');
+    }
+  }, [isAuthenticated, loading, router]);
 
   const handleSave = () => {
     // Save nickname logic here
@@ -26,7 +33,6 @@ export default function SettingsPage() {
 
   const handleDeactivate = () => {
     if (confirm("Are you sure you want to deactivate your account? This action cannot be undone.")) {
-      // Deactivate account logic here
       console.log("Deactivating account...");
     }
   };
@@ -35,6 +41,15 @@ export default function SettingsPage() {
     setComponentScale(1);
     setFontScale(1);
   };
+
+  // Show loading state while checking authentication or redirecting
+  if (loading || !isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-xl text-gray-600">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-4 md:p-8">

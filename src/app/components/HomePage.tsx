@@ -2,17 +2,47 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Streak } from "./Streak";
 import { MoodTracking, calculateStreak } from "./MoodTracking";
 import { DailyGoals } from "./DailyGoals";
 import { PetGameScene } from "./PetGameScene";
+import { PersonalizationResultModal } from "./PersonalizationResultModal";
 import { useSettings } from "../contexts/SettingsContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const HomePage = (): React.JSX.Element => {
   const [streak, setStreak] = useState(0);
   const [showMobileGoals, setShowMobileGoals] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [showPersonalizationModal, setShowPersonalizationModal] = useState(false);
+  const [personalizationCategory, setPersonalizationCategory] = useState<"Connection & Social" | "Self-Care & Wellness" | "Growth & Expression">("Connection & Social");
   const { componentScale, fontScale } = useSettings();
+  const { isAuthenticated, loading } = useAuth();
+  const router = useRouter();
+
+  // Redirect to splash if not authenticated
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push('/splash');
+    }
+  }, [isAuthenticated, loading, router]);
+
+  // Check if we should show the personalization result modal
+  useEffect(() => {
+    if (isAuthenticated) {
+      const shouldShowModal = localStorage.getItem("showPersonalizationResult");
+      if (shouldShowModal === "true") {
+        const category = localStorage.getItem("personalizationCategory") as "Connection & Social" | "Self-Care & Wellness" | "Growth & Expression" | null;
+        if (category) {
+          setPersonalizationCategory(category);
+          setShowPersonalizationModal(true);
+          // Clear the flag so it doesn't show again
+          localStorage.removeItem("showPersonalizationResult");
+        }
+      }
+    }
+  }, [isAuthenticated]);
 
   // Calculate streak on mount and when localStorage changes
   useEffect(() => {
@@ -33,7 +63,26 @@ export const HomePage = (): React.JSX.Element => {
       window.removeEventListener('moodUpdated', updateStreak);
     };
   }, []);
+
+  // Show loading state while checking authentication or redirecting
+  if (loading || !isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-xl text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
   return (
+    <>
+      {/* Personalization Result Modal */}
+      {showPersonalizationModal && (
+        <PersonalizationResultModal
+          category={personalizationCategory}
+          onClose={() => setShowPersonalizationModal(false)}
+        />
+      )}
+
     <main className="relative h-screen w-full overflow-hidden">
       {/* Full-page Game Scene Background */}
       <div className="absolute inset-0 w-full h-full">
@@ -163,5 +212,6 @@ export const HomePage = (): React.JSX.Element => {
         </div>
       </div>
     </main>
+    </>
   );
 };

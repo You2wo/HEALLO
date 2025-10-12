@@ -314,7 +314,7 @@ export const PetGameScene: React.FC<PetGameSceneProps> = ({ className = "" }) =>
         phaserGameRef.current = null;
       }
     };
-  }, [isClient, petStats]);
+  }, [isClient]);
 
   if (!isClient) {
     return (

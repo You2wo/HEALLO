@@ -1,12 +1,79 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { goalApi } from "@/lib/api";
+
+// Preset daily goals for each category
+const PRESET_GOALS = {
+  "Connection & Social": [
+    {
+      title: "Call or message a friend",
+      description: "Reach out to someone you care about",
+      icon: "💬",
+      period: "Daily"
+    },
+    {
+      title: "Have a meaningful conversation",
+      description: "Connect deeply with someone today",
+      icon: "🤝",
+      period: "Daily"
+    },
+    {
+      title: "Join a social activity",
+      description: "Participate in a group activity or event",
+      icon: "👥",
+      period: "Weekly"
+    }
+  ],
+  "Self-Care & Wellness": [
+    {
+      title: "Take a 15-minute walk",
+      description: "Get some fresh air and movement",
+      icon: "🚶",
+      period: "Daily"
+    },
+    {
+      title: "Practice mindfulness or meditation",
+      description: "Spend 10 minutes in quiet reflection",
+      icon: "🧘",
+      period: "Daily"
+    },
+    {
+      title: "Get 7-8 hours of sleep",
+      description: "Prioritize rest and recovery",
+      icon: "😴",
+      period: "Daily"
+    }
+  ],
+  "Growth & Expression": [
+    {
+      title: "Work on a creative project",
+      description: "Spend time on art, writing, or music",
+      icon: "🎨",
+      period: "Daily"
+    },
+    {
+      title: "Learn something new",
+      description: "Read, watch, or practice a new skill",
+      icon: "📚",
+      period: "Daily"
+    },
+    {
+      title: "Express yourself creatively",
+      description: "Create something that represents you",
+      icon: "✨",
+      period: "Weekly"
+    }
+  ]
+};
 
 export default function PersonalizationPage() {
-  const [stressDealing, setStressDealing] = useState<string[]>(["I talk to someone or spend time with friends"]);
-  const [improvement, setImprovement] = useState<string[]>(["Building stronger relationships"]);
-  const [fulfillment, setFulfillment] = useState<string[]>(["Talking and connecting with others"]);
+  const router = useRouter();
+  const [stressDealing, setStressDealing] = useState<string[]>([]);
+  const [improvement, setImprovement] = useState<string[]>([]);
+  const [fulfillment, setFulfillment] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
   const toggleOption = (category: 'stress' | 'improvement' | 'fulfillment', option: string) => {
     const setters = {
@@ -30,9 +97,102 @@ export default function PersonalizationPage() {
     }
   };
 
-  const handleSave = () => {
-    console.log("Saving personalization:", { stressDealing, improvement, fulfillment });
-    // Add save logic here
+  const calculateCategory = (): "Connection & Social" | "Self-Care & Wellness" | "Growth & Expression" => {
+    const scores = {
+      "Connection & Social": 0,
+      "Self-Care & Wellness": 0,
+      "Growth & Expression": 0
+    };
+
+    // Score based on stress dealing
+    if (stressDealing.includes("I talk to someone or spend time with friends")) {
+      scores["Connection & Social"] += 1;
+    }
+    if (stressDealing.includes("I rest, take a walk, or do something relaxing")) {
+      scores["Self-Care & Wellness"] += 1;
+    }
+    if (stressDealing.includes("I express myself through art, writing, or music")) {
+      scores["Growth & Expression"] += 1;
+    }
+
+    // Score based on improvement
+    if (improvement.includes("Building stronger relationships")) {
+      scores["Connection & Social"] += 1;
+    }
+    if (improvement.includes("Taking better care of my mind and body")) {
+      scores["Self-Care & Wellness"] += 1;
+    }
+    if (improvement.includes("Finding new ways to express my creativity")) {
+      scores["Growth & Expression"] += 1;
+    }
+
+    // Score based on fulfillment
+    if (fulfillment.includes("Talking and connecting with others")) {
+      scores["Connection & Social"] += 1;
+    }
+    if (fulfillment.includes("Having a peaceful day and feeling healthy")) {
+      scores["Self-Care & Wellness"] += 1;
+    }
+    if (fulfillment.includes("Creating, learning or discovering something new")) {
+      scores["Growth & Expression"] += 1;
+    }
+
+    // Find the category with the highest score
+    let maxScore = 0;
+    let topCategory: "Connection & Social" | "Self-Care & Wellness" | "Growth & Expression" = "Connection & Social";
+    
+    for (const [category, score] of Object.entries(scores)) {
+      if (score > maxScore) {
+        maxScore = score;
+        topCategory = category as "Connection & Social" | "Self-Care & Wellness" | "Growth & Expression";
+      }
+    }
+
+    return topCategory;
+  };
+
+  const handleSave = async () => {
+    // Validate that at least one option is selected in each category
+    if (stressDealing.length === 0 || improvement.length === 0 || fulfillment.length === 0) {
+      alert("Please select at least one option for each question.");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      // Calculate the user's category
+      const category = calculateCategory();
+
+      // Save personalization data to localStorage
+      localStorage.setItem("personalizationComplete", "true");
+      localStorage.setItem("personalizationCategory", category);
+      localStorage.setItem("personalizationData", JSON.stringify({
+        stressDealing,
+        improvement,
+        fulfillment,
+        category,
+        completedAt: new Date().toISOString()
+      }));
+
+      // Create preset goals for the determined category
+      const presetGoals = PRESET_GOALS[category];
+      for (const goal of presetGoals) {
+        try {
+          await goalApi.create(goal);
+        } catch (error) {
+          console.error("Failed to create preset goal:", error);
+        }
+      }
+
+      // Redirect to homepage with a flag to show the modal
+      localStorage.setItem("showPersonalizationResult", "true");
+      router.push("/");
+    } catch (error) {
+      console.error("Failed to save personalization:", error);
+      alert("Failed to save personalization. Please try again.");
+      setSaving(false);
+    }
   };
 
   return (
@@ -241,9 +401,10 @@ export default function PersonalizationPage() {
           <div className="flex justify-center pt-4">
             <button
               onClick={handleSave}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-20 py-4 rounded-full shadow-lg transition-all hover:shadow-xl text-lg"
+              disabled={saving}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-20 py-4 rounded-full shadow-lg transition-all hover:shadow-xl text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Save
+              {saving ? "Saving..." : "Save"}
             </button>
           </div>
         </div>

@@ -35,7 +35,8 @@ export default function RegisterPage() {
 
     try {
       await register(username, email, password, nickname || username);
-      router.push("/"); // Redirect to home page
+      // Redirect to personalization page after successful registration
+      router.push("/personalization");
     } catch (err: any) {
       setError(err.message || "Registration failed. Please try again.");
     } finally {

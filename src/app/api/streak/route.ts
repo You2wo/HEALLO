@@ -96,7 +96,7 @@ async function updateStreak(userId: string) {
 
   // Start counting from today or yesterday
   let currentStreak = 0;
-  const checkDate = new Date(today);
+  let checkDate = new Date(today);
   
   // If no entry for today, start from yesterday
   if (!uniqueDateStrings.includes(todayString)) {

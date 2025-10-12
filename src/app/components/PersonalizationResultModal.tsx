@@ -74,7 +74,7 @@ export const PersonalizationResultModal: React.FC<PersonalizationResultModalProp
             {category}
           </h3>
           <p className="text-gray-600 text-lg">
-            You&apos;re <span className="text-blue-600 font-semibold">daily task</span> is now personalized<br />
+            You're <span className="text-blue-600 font-semibold">daily task</span> is now personalized<br />
             based on your questionnaire result!
           </p>
         </div>

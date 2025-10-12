@@ -22,9 +22,8 @@ export default function LoginPage() {
     try {
       await login(email, password);
       router.push("/"); // Redirect to home page
-    } catch (err: unknown) {
-      const error = err as Error;
-      setError(error.message || "Login failed. Please check your credentials.");
+    } catch (err: any) {
+      setError(err.message || "Login failed. Please check your credentials.");
     } finally {
       setLoading(false);
     }

@@ -5,9 +5,8 @@ import { getUserFromRequest } from '@/lib/auth';
 // GET a specific journal entry
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
   try {
     const userPayload = getUserFromRequest(request);
     
@@ -20,7 +19,7 @@ export async function GET(
 
     const journal = await prisma.journal.findFirst({
       where: {
-        id: id,
+        id: params.id,
         userId: userPayload.userId,
       }
     });
@@ -46,9 +45,8 @@ export async function GET(
 // PUT update a journal entry
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
   try {
     const userPayload = getUserFromRequest(request);
     
@@ -65,7 +63,7 @@ export async function PUT(
     // Check if journal exists and belongs to user
     const existingJournal = await prisma.journal.findFirst({
       where: {
-        id: id,
+        id: params.id,
         userId: userPayload.userId,
       }
     });
@@ -78,7 +76,7 @@ export async function PUT(
     }
 
     const journal = await prisma.journal.update({
-      where: { id: id },
+      where: { id: params.id },
       data: {
         mood: mood || existingJournal.mood,
         notes: notes !== undefined ? notes : existingJournal.notes,
@@ -113,9 +111,8 @@ export async function PUT(
 // DELETE a journal entry
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
   try {
     const userPayload = getUserFromRequest(request);
     
@@ -129,7 +126,7 @@ export async function DELETE(
     // Check if journal exists and belongs to user
     const existingJournal = await prisma.journal.findFirst({
       where: {
-        id: id,
+        id: params.id,
         userId: userPayload.userId,
       }
     });
@@ -142,7 +139,7 @@ export async function DELETE(
     }
 
     await prisma.journal.delete({
-      where: { id: id }
+      where: { id: params.id }
     });
 
     // Also delete mood entry

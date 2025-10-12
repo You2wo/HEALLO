@@ -386,7 +386,7 @@ export const MoodTracking: React.FC<MoodTrackingProps> = () => {
       
       // Convert array to object keyed by date
       const moodMap: Record<string, MoodType> = {};
-      response.moods.forEach((mood: { date: string; mood: string }) => {
+      response.moods.forEach((mood: any) => {
         const date = new Date(mood.date);
         const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         moodMap[dateKey] = mood.mood as MoodType;

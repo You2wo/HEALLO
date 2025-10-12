@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const month = searchParams.get('month');
     const year = searchParams.get('year');
 
-    const whereClause: Record<string, unknown> = { userId: userPayload.userId };
+    let whereClause: any = { userId: userPayload.userId };
 
     // Filter by month and year if provided
     if (month && year) {

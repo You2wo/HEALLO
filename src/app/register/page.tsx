@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
@@ -9,15 +11,36 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [nickname, setNickname] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  
+  const { register } = useAuth();
+  const router = useRouter();
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+
     if (password !== confirmPassword) {
-      alert("Passwords do not match!");
+      setError("Passwords do not match!");
       return;
     }
-    console.log("Registering with:", { username, email, password, nickname });
-    // Add registration logic here
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await register(username, email, password, nickname || username);
+      router.push("/"); // Redirect to home page
+    } catch (err: any) {
+      setError(err.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,6 +70,12 @@ export default function RegisterPage() {
           <div className="w-full max-w-xl">
             <h1 className="text-6xl font-bold text-gray-800 mb-12">Register</h1>
 
+            {error && (
+              <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                {error}
+              </div>
+            )}
+
             <form onSubmit={handleRegister} className="space-y-6">
               {/* Username Field */}
               <div>
@@ -60,6 +89,7 @@ export default function RegisterPage() {
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full px-4 py-3 border-2 border-blue-400 rounded-lg focus:outline-none focus:border-blue-600 transition-colors text-gray-800"
                   required
+                  disabled={loading}
                 />
               </div>
 
@@ -75,6 +105,7 @@ export default function RegisterPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-3 border-2 border-blue-400 rounded-lg focus:outline-none focus:border-blue-600 transition-colors text-gray-800"
                   required
+                  disabled={loading}
                 />
               </div>
 
@@ -91,6 +122,7 @@ export default function RegisterPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-4 py-3 border-2 border-blue-400 rounded-lg focus:outline-none focus:border-blue-600 transition-colors text-gray-800"
                     required
+                    disabled={loading}
                   />
                 </div>
                 <div>
@@ -104,6 +136,7 @@ export default function RegisterPage() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="w-full px-4 py-3 border-2 border-blue-400 rounded-lg focus:outline-none focus:border-blue-600 transition-colors text-gray-800"
                     required
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -133,6 +166,7 @@ export default function RegisterPage() {
                       value={nickname}
                       onChange={(e) => setNickname(e.target.value)}
                       className="w-full text-lg text-gray-400 outline-none border-b-2 border-gray-200 pb-2 focus:border-blue-500 transition-colors"
+                      disabled={loading}
                     />
                   </div>
                 </div>
@@ -148,9 +182,10 @@ export default function RegisterPage() {
                 </p>
                 <button
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-12 py-3 rounded-full shadow-lg transition-all hover:shadow-xl"
+                  disabled={loading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-12 py-3 rounded-full shadow-lg transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Register
+                  {loading ? "Registering..." : "Register"}
                 </button>
               </div>
             </form>

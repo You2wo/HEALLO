@@ -2,19 +2,48 @@
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { streakApi } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface StreakProps {
   days?: number;
 }
 
-export const Streak: React.FC<StreakProps> = ({ days = 0 }) => {
+export const Streak: React.FC<StreakProps> = () => {
+  const [days, setDays] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadStreak();
+    }
+    
+    // Listen for mood updates to refresh streak
+    const handleMoodUpdate = () => {
+      if (isAuthenticated) {
+        loadStreak();
+      }
+    };
+    
+    window.addEventListener('moodUpdated', handleMoodUpdate);
+    return () => window.removeEventListener('moodUpdated', handleMoodUpdate);
+  }, [isAuthenticated]);
+
+  const loadStreak = async () => {
+    try {
+      const response = await streakApi.get();
+      setDays(response.streak.currentStreak);
+    } catch (error) {
+      console.error("Failed to load streak:", error);
+    }
+  };
 
   const handleStreakClick = () => {
     setIsModalOpen(true);

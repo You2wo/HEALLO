@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { moodApi, journalApi } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MoodTrackingProps {
   month?: string;
@@ -60,13 +62,34 @@ const MoodCircle: React.FC<{
   dayNumber: number;
   isToday: boolean;
   isFuture: boolean;
+  isPast: boolean;
   onClick: () => void;
-}> = ({ mood, dayNumber, isToday, isFuture, onClick }) => {
+}> = ({ mood, dayNumber, isToday, isFuture, isPast, onClick }) => {
   const getCircleStyles = () => {
     const baseStyles = 'flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full transition-all duration-200';
     
     if (isFuture) {
       return `${baseStyles} bg-gray-300 cursor-not-allowed opacity-50`;
+    }
+    
+    // Past dates are locked (show mood but not clickable)
+    if (isPast) {
+      const baseStylesLocked = 'flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full transition-all duration-200 cursor-not-allowed';
+      
+      switch (mood) {
+        case 'good':
+          return `${baseStylesLocked} bg-yellow-400`;
+        case 'neutral':
+          return `${baseStylesLocked} bg-blue-500`;
+        case 'bad':
+          return `${baseStylesLocked} bg-red-500`;
+        case 'stress':
+          return `${baseStylesLocked} bg-orange-500`;
+        case 'meh':
+          return `${baseStylesLocked} bg-cyan-300`;
+        default:
+          return `${baseStylesLocked} bg-gray-300`;
+      }
     }
     
     const hoverStyles = 'cursor-pointer hover:scale-110 hover:shadow-md';
@@ -106,9 +129,15 @@ const MoodCircle: React.FC<{
   return (
     <button
       onClick={handleClick}
-      disabled={isFuture}
+      disabled={isFuture || isPast}
       className={`${getCircleStyles()} ${isToday ? 'ring-2 ring-blue-400 ring-offset-1' : ''}`}
-      title={isFuture ? 'Future date' : `Day ${dayNumber} - Click to change mood`}
+      title={
+        isFuture 
+          ? 'Future date' 
+          : isPast 
+          ? 'Past dates cannot be changed' 
+          : `Day ${dayNumber} - Click to track mood`
+      }
       aria-label={`Day ${dayNumber}, mood: ${mood}`}
     >
       {getCheckmark()}
@@ -117,11 +146,12 @@ const MoodCircle: React.FC<{
 };
 
 const MoodSelector: React.FC<{
-  onSelect: (mood: MoodType) => void;
+  onSelect: (mood: MoodType, notes: string) => void;
   onClose: () => void;
   selectedDate: Date;
 }> = ({ onSelect, onClose, selectedDate }) => {
   const [notes, setNotes] = useState('');
+  const [selectedMood, setSelectedMood] = useState<MoodType | null>(null);
   
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const monthNames = [
@@ -133,9 +163,14 @@ const MoodSelector: React.FC<{
   const monthName = monthNames[selectedDate.getMonth()];
   const dayNumber = selectedDate.getDate();
   
-  const handleSave = (mood: MoodType) => {
-    onSelect(mood);
-    // Here you could also save the notes if needed
+  const handleMoodClick = (mood: MoodType) => {
+    setSelectedMood(mood);
+  };
+
+  const handleSaveJournal = () => {
+    if (selectedMood) {
+      onSelect(selectedMood, notes);
+    }
   };
 
   return (
@@ -222,8 +257,8 @@ const MoodSelector: React.FC<{
               <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 mb-4 md:mb-6">How are you feeling today?</h3>
               <div className="flex gap-2 md:gap-4 justify-start flex-wrap">
                 <button
-                  onClick={() => handleSave('good')}
-                  className="flex flex-col items-center gap-2 md:gap-3 p-3 md:p-6 rounded-t-3xl bg-white border-2 border-blue-400 hover:border-blue-500 transition-all group shadow-sm hover:shadow-md"
+                  onClick={() => handleMoodClick('good')}
+                  className={`flex flex-col items-center gap-2 md:gap-3 p-3 md:p-6 rounded-t-3xl bg-white border-2 ${selectedMood === 'good' ? 'border-blue-500' : 'border-blue-400'} hover:border-blue-500 transition-all group shadow-sm hover:shadow-md`}
                   title="Happy"
                 >
                   <div className="w-14 h-14 md:w-20 md:h-20 bg-gray-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -233,8 +268,8 @@ const MoodSelector: React.FC<{
                 </button>
                 
                 <button
-                  onClick={() => handleSave('neutral')}
-                  className="flex flex-col items-center gap-2 md:gap-3 p-3 md:p-6 rounded-t-3xl bg-white border-2 border-gray-200 hover:border-gray-300 transition-all group shadow-sm hover:shadow-md"
+                  onClick={() => handleMoodClick('neutral')}
+                  className={`flex flex-col items-center gap-2 md:gap-3 p-3 md:p-6 rounded-t-3xl bg-white border-2 ${selectedMood === 'neutral' ? 'border-blue-500' : 'border-gray-200'} hover:border-gray-300 transition-all group shadow-sm hover:shadow-md`}
                   title="Sad"
                 >
                   <div className="w-14 h-14 md:w-20 md:h-20 bg-gray-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -244,8 +279,8 @@ const MoodSelector: React.FC<{
                 </button>
                 
                 <button
-                  onClick={() => handleSave('bad')}
-                  className="flex flex-col items-center gap-2 md:gap-3 p-3 md:p-6 rounded-t-3xl bg-white border-2 border-gray-200 hover:border-gray-300 transition-all group shadow-sm hover:shadow-md"
+                  onClick={() => handleMoodClick('bad')}
+                  className={`flex flex-col items-center gap-2 md:gap-3 p-3 md:p-6 rounded-t-3xl bg-white border-2 ${selectedMood === 'bad' ? 'border-blue-500' : 'border-gray-200'} hover:border-gray-300 transition-all group shadow-sm hover:shadow-md`}
                   title="Mad"
                 >
                   <div className="w-14 h-14 md:w-20 md:h-20 bg-gray-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -255,8 +290,8 @@ const MoodSelector: React.FC<{
                 </button>
                 
                 <button
-                  onClick={() => handleSave('stress')}
-                  className="flex flex-col items-center gap-2 md:gap-3 p-3 md:p-6 rounded-t-3xl bg-white border-2 border-gray-200 hover:border-gray-300 transition-all group shadow-sm hover:shadow-md"
+                  onClick={() => handleMoodClick('stress')}
+                  className={`flex flex-col items-center gap-2 md:gap-3 p-3 md:p-6 rounded-t-3xl bg-white border-2 ${selectedMood === 'stress' ? 'border-blue-500' : 'border-gray-200'} hover:border-gray-300 transition-all group shadow-sm hover:shadow-md`}
                   title="Stress"
                 >
                   <div className="w-14 h-14 md:w-20 md:h-20 bg-gray-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -266,8 +301,8 @@ const MoodSelector: React.FC<{
                 </button>
                 
                 <button
-                  onClick={() => handleSave('meh')}
-                  className="flex flex-col items-center gap-2 md:gap-3 p-3 md:p-6 rounded-t-3xl bg-white border-2 border-gray-200 hover:border-gray-300 transition-all group shadow-sm hover:shadow-md"
+                  onClick={() => handleMoodClick('meh')}
+                  className={`flex flex-col items-center gap-2 md:gap-3 p-3 md:p-6 rounded-t-3xl bg-white border-2 ${selectedMood === 'meh' ? 'border-blue-500' : 'border-gray-200'} hover:border-gray-300 transition-all group shadow-sm hover:shadow-md`}
                   title="Meh"
                 >
                   <div className="w-14 h-14 md:w-20 md:h-20 bg-gray-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -296,8 +331,9 @@ const MoodSelector: React.FC<{
             {/* Save Button */}
             <div className="flex justify-end">
               <button
-                onClick={onClose}
-                className="px-8 md:px-12 py-3 md:py-4 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors font-semibold text-base md:text-lg shadow-lg"
+                onClick={handleSaveJournal}
+                disabled={!selectedMood}
+                className="px-8 md:px-12 py-3 md:py-4 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors font-semibold text-base md:text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Save Journal
               </button>
@@ -315,6 +351,7 @@ export const MoodTracking: React.FC<MoodTrackingProps> = () => {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [showSelector, setShowSelector] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     setMounted(true);
@@ -333,34 +370,43 @@ export const MoodTracking: React.FC<MoodTrackingProps> = () => {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  // Load mood data from localStorage
+  // Load mood data from backend
   useEffect(() => {
-    const storageKey = getStorageKey(currentYear, currentMonth);
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
-      try {
-        setMoodData(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to parse mood data:', e);
-      }
+    if (isAuthenticated) {
+      loadMoodsFromBackend();
     }
-  }, [currentYear, currentMonth]);
+  }, [currentYear, currentMonth, isAuthenticated]);
 
-  // Save mood data to localStorage
-  const saveMoodData = (data: Record<string, MoodType>) => {
-    const storageKey = getStorageKey(currentYear, currentMonth);
-    localStorage.setItem(storageKey, JSON.stringify(data));
-    setMoodData(data);
-    
-    // Dispatch custom event to notify other components
-    window.dispatchEvent(new Event('moodUpdated'));
+  const loadMoodsFromBackend = async () => {
+    try {
+      const response = await moodApi.getAll({
+        month: currentMonth + 1,
+        year: currentYear
+      });
+      
+      // Convert array to object keyed by date
+      const moodMap: Record<string, MoodType> = {};
+      response.moods.forEach((mood: any) => {
+        const date = new Date(mood.date);
+        const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        moodMap[dateKey] = mood.mood as MoodType;
+      });
+      
+      setMoodData(moodMap);
+    } catch (error) {
+      console.error('Failed to load moods:', error);
+    }
   };
 
   const handleDayClick = (dayNumber: number) => {
     const clickedDate = new Date(currentYear, currentMonth, dayNumber);
+    clickedDate.setHours(0, 0, 0, 0);
     
-    // Don't allow selecting future dates
-    if (clickedDate > today) {
+    const todayNormalized = new Date(today);
+    todayNormalized.setHours(0, 0, 0, 0);
+    
+    // Only allow selecting today's date
+    if (clickedDate.getTime() !== todayNormalized.getTime()) {
       return;
     }
     
@@ -368,14 +414,33 @@ export const MoodTracking: React.FC<MoodTrackingProps> = () => {
     setShowSelector(true);
   };
 
-  const handleMoodSelect = (mood: MoodType) => {
+  const handleMoodSelect = async (mood: MoodType, notes: string) => {
     if (selectedDay === null) return;
     
     const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
-    const newMoodData = { ...moodData, [dateKey]: mood };
-    saveMoodData(newMoodData);
-    setShowSelector(false);
-    setSelectedDay(null);
+    const selectedDate = new Date(currentYear, currentMonth, selectedDay);
+    
+    try {
+      // Save to backend
+      await journalApi.create({
+        date: selectedDate.toISOString(),
+        mood: mood,
+        notes: notes || undefined
+      });
+      
+      // Update local state
+      const newMoodData = { ...moodData, [dateKey]: mood };
+      setMoodData(newMoodData);
+      
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new Event('moodUpdated'));
+      
+      setShowSelector(false);
+      setSelectedDay(null);
+    } catch (error) {
+      console.error('Failed to save mood:', error);
+      alert('Failed to save mood. Please try again.');
+    }
   };
 
   
@@ -398,10 +463,11 @@ export const MoodTracking: React.FC<MoodTrackingProps> = () => {
 
   
   const handleScheduleClick = () => {
-    // Open modal for today's date
-    const dayToSelect = isCurrentMonth ? todayDate : 1;
-    setSelectedDay(dayToSelect);
-    setShowSelector(true);
+    // Only open modal if we're in the current month
+    if (isCurrentMonth) {
+      setSelectedDay(todayDate);
+      setShowSelector(true);
+    }
   };
 
   return (
@@ -427,8 +493,14 @@ export const MoodTracking: React.FC<MoodTrackingProps> = () => {
           <div key={rowIndex} className="flex justify-start gap-3 md:gap-4">
             {row.map((day) => {
               const dayDate = new Date(currentYear, currentMonth, day.dayNumber);
-              const isFuture = dayDate > today;
-              const isToday = isCurrentMonth && day.dayNumber === todayDate;
+              dayDate.setHours(0, 0, 0, 0);
+              
+              const todayNormalized = new Date(today);
+              todayNormalized.setHours(0, 0, 0, 0);
+              
+              const isFuture = dayDate > todayNormalized;
+              const isPast = dayDate < todayNormalized;
+              const isToday = dayDate.getTime() === todayNormalized.getTime();
               
               return (
                 <MoodCircle
@@ -437,6 +509,7 @@ export const MoodTracking: React.FC<MoodTrackingProps> = () => {
                   dayNumber={day.dayNumber}
                   isToday={isToday}
                   isFuture={isFuture}
+                  isPast={isPast}
                   onClick={() => handleDayClick(day.dayNumber)}
                 />
               );

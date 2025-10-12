@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { goalApi } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DailyGoal {
   id: string;
@@ -9,53 +11,61 @@ interface DailyGoal {
   description?: string;
   completed: boolean;
   icon?: string;
+  period?: string;
 }
 
 interface DailyGoalsProps {
   goals?: DailyGoal[];
 }
 
-export const DailyGoals: React.FC<DailyGoalsProps> = ({ 
-  goals: initialGoals = [
-    { 
-      id: "1",
-      title: "Check the weather!", 
-      description: "take a walk around the neighbourhood and get some fresh air for 5 minutes ...",
-      completed: false,
-      icon: "☁️"
-    },
-    { 
-      id: "2",
-      title: "Check the weather!", 
-      description: "",
-      completed: true,
-      icon: "☁️"
-    },
-    { 
-      id: "3",
-      title: "Check the weather!", 
-      description: "take a walk around the neighbourhood and get some fresh air for 5 minutes ...",
-      completed: false,
-      icon: "☁️"
-    }
-  ]
-}) => {
-  const [goals, setGoals] = useState<DailyGoal[]>(initialGoals);
+export const DailyGoals: React.FC<DailyGoalsProps> = () => {
+  const [goals, setGoals] = useState<DailyGoal[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [routineName, setRoutineName] = useState("");
   const [description, setDescription] = useState("");
   const [period, setPeriod] = useState("Daily");
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
 
-  const toggleGoal = (id: string) => {
-    setGoals(goals.map(goal => 
-      goal.id === id ? { ...goal, completed: !goal.completed } : goal
-    ));
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadGoals();
+    } else {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  const loadGoals = async () => {
+    try {
+      setLoading(true);
+      const response = await goalApi.getAll();
+      setGoals(response.goals);
+    } catch (error) {
+      console.error("Failed to load goals:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleGoal = async (id: string) => {
+    try {
+      await goalApi.toggle(id);
+      // Update local state optimistically
+      setGoals(goals.map(goal => 
+        goal.id === id ? { ...goal, completed: !goal.completed } : goal
+      ));
+    } catch (error) {
+      console.error("Failed to toggle goal:", error);
+      // Reload goals if toggle fails
+      loadGoals();
+    }
   };
 
   const handleOpenModal = () => {
@@ -70,18 +80,36 @@ export const DailyGoals: React.FC<DailyGoalsProps> = ({
     setPeriod("Daily");
   };
 
-  const handleSaveRoutine = () => {
-    // Add new routine logic here
-    const newGoal: DailyGoal = {
-      id: Date.now().toString(),
-      title: routineName,
-      description: description,
-      completed: false,
-      icon: "🌱"
-    };
-    setGoals([...goals, newGoal]);
-    handleCloseModal();
+  const handleSaveRoutine = async () => {
+    if (!routineName.trim()) return;
+
+    try {
+      await goalApi.create({
+        title: routineName,
+        description: description,
+        icon: "🌱",
+        period: period,
+      });
+      
+      // Reload goals
+      await loadGoals();
+      
+      // Close modal and reset form
+      handleCloseModal();
+    } catch (error) {
+      console.error("Failed to create goal:", error);
+      alert("Failed to create goal. Please try again.");
+    }
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="bg-gradient-to-br from-white to-blue-50 rounded-3xl shadow-lg p-6 md:p-8">
+        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Daily Goals</h2>
+        <p className="text-gray-600">Please log in to view your goals.</p>
+      </div>
+    );
+  }
 
   return (
     <>

@@ -2,8 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { journalApi } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface JournalEntry {
+  id: string;
   date: string;
   mood: 'good' | 'neutral' | 'bad' | 'stress' | 'meh';
   notes: string;
@@ -16,14 +19,12 @@ const getDaysInMonth = (year: number, month: number): number => {
   return new Date(year, month + 1, 0).getDate();
 };
 
-const getStorageKey = (year: number, month: number): string => {
-  return `mood-tracker-${year}-${month}`;
-};
-
 export const ViewJournal: React.FC = () => {
   const [currentDate] = useState(new Date());
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
-  const [moodData, setMoodData] = useState<Record<string, string>>({});
+  const [journals, setJournals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { isAuthenticated } = useAuth();
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
@@ -37,40 +38,44 @@ export const ViewJournal: React.FC = () => {
 
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-  // Load mood data from localStorage
+  // Load journal data from backend
   useEffect(() => {
-    const storageKey = getStorageKey(currentYear, currentMonth);
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
-      try {
-        setMoodData(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to parse mood data:', e);
-      }
+    if (isAuthenticated) {
+      loadJournals();
+    } else {
+      setLoading(false);
     }
-  }, [currentYear, currentMonth]);
+  }, [currentYear, currentMonth, isAuthenticated]);
 
-  // Auto-select first entry with mood data
-  useEffect(() => {
-    if (Object.keys(moodData).length > 0 && !selectedEntry) {
-      // Find the first day with a mood entry
-      for (let i = 1; i <= daysInMonth; i++) {
-        const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-        if (moodData[dateKey] && moodData[dateKey] !== 'untracked') {
-          const date = new Date(currentYear, currentMonth, i);
-          setSelectedEntry({
-            date: dateKey,
-            mood: moodData[dateKey] as 'good' | 'neutral' | 'bad' | 'stress' | 'meh',
-            notes: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis turpis mi, aliquam quis vehicula vel, porta eu leo. Aliquam fermentum faucibus nulla, non suscipit leo suscipit ut. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Nam quis",
-            dayNumber: i,
-            dayName: dayNames[date.getDay()],
-            monthName: monthNames[currentMonth]
-          });
-          break;
-        }
+  const loadJournals = async () => {
+    try {
+      setLoading(true);
+      const response = await journalApi.getAll({
+        month: currentMonth + 1,
+        year: currentYear
+      });
+      setJournals(response.journals);
+      
+      // Auto-select first entry
+      if (response.journals.length > 0 && !selectedEntry) {
+        const firstJournal = response.journals[0];
+        const date = new Date(firstJournal.date);
+        setSelectedEntry({
+          id: firstJournal.id,
+          date: firstJournal.date,
+          mood: firstJournal.mood,
+          notes: firstJournal.notes || "No notes for this day.",
+          dayNumber: date.getDate(),
+          dayName: dayNames[date.getDay()],
+          monthName: monthNames[date.getMonth()]
+        });
       }
+    } catch (error) {
+      console.error('Failed to load journals:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [moodData, selectedEntry, currentYear, currentMonth, daysInMonth, dayNames, monthNames]);
+  };
 
   const getMoodEmojiSrc = (mood: string) => {
     switch (mood) {
@@ -90,30 +95,55 @@ export const ViewJournal: React.FC = () => {
   };
 
   const handleDayClick = (dayNumber: number) => {
-    const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
-    const mood = moodData[dateKey];
+    // Find journal entry for this day
+    const journal = journals.find(j => {
+      const date = new Date(j.date);
+      return date.getDate() === dayNumber;
+    });
     
-    if (mood && mood !== 'untracked') {
-      const date = new Date(currentYear, currentMonth, dayNumber);
+    if (journal) {
+      const date = new Date(journal.date);
       setSelectedEntry({
-        date: dateKey,
-        mood: mood as 'good' | 'neutral' | 'bad' | 'stress' | 'meh',
-        notes: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis turpis mi, aliquam quis vehicula vel, porta eu leo. Aliquam fermentum faucibus nulla, non suscipit leo suscipit ut. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Nam quis",
+        id: journal.id,
+        date: journal.date,
+        mood: journal.mood,
+        notes: journal.notes || "No notes for this day.",
         dayNumber: dayNumber,
         dayName: dayNames[date.getDay()],
-        monthName: monthNames[currentMonth]
+        monthName: monthNames[date.getMonth()]
       });
     }
   };
 
-  const handleEdit = () => {
-    // TODO: Implement edit functionality
-    console.log('Edit clicked');
+  const handleEdit = async () => {
+    if (!selectedEntry) return;
+    
+    const newNotes = prompt("Edit your journal notes:", selectedEntry.notes);
+    if (newNotes !== null) {
+      try {
+        await journalApi.update(selectedEntry.id, { notes: newNotes });
+        setSelectedEntry({ ...selectedEntry, notes: newNotes });
+        await loadJournals();
+      } catch (error) {
+        console.error('Failed to update journal:', error);
+        alert('Failed to update journal. Please try again.');
+      }
+    }
   };
 
-  const handleDelete = () => {
-    // TODO: Implement delete functionality
-    console.log('Delete clicked');
+  const handleDelete = async () => {
+    if (!selectedEntry) return;
+    
+    if (confirm("Are you sure you want to delete this journal entry?")) {
+      try {
+        await journalApi.delete(selectedEntry.id);
+        setSelectedEntry(null);
+        await loadJournals();
+      } catch (error) {
+        console.error('Failed to delete journal:', error);
+        alert('Failed to delete journal. Please try again.');
+      }
+    }
   };
 
   // Generate calendar grid
@@ -126,23 +156,27 @@ export const ViewJournal: React.FC = () => {
     return rows.map((row, rowIndex) => (
       <div key={rowIndex} className="flex justify-start gap-3 md:gap-4">
         {row.map((day) => {
-          const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          const mood = moodData[dateKey];
           const dayDate = new Date(currentYear, currentMonth, day);
           const isFuture = dayDate > today;
           const isSelected = selectedEntry?.dayNumber === day;
           const isToday = today.getFullYear() === currentYear && 
                          today.getMonth() === currentMonth && 
                          today.getDate() === day;
+          
+          // Check if there's a journal entry for this day
+          const hasJournal = journals.some(j => {
+            const jDate = new Date(j.date);
+            return jDate.getDate() === day;
+          });
 
           return (
             <button
               key={day}
               onClick={() => handleDayClick(day)}
-              disabled={isFuture || !mood || mood === 'untracked'}
+              disabled={isFuture || !hasJournal}
               className={`
                 flex items-center justify-center w-12 h-12 md:w-16 md:h-16 rounded-2xl transition-all duration-200
-                ${isFuture || !mood || mood === 'untracked' 
+                ${isFuture || !hasJournal
                   ? 'bg-gray-200 cursor-not-allowed opacity-50' 
                   : `${isSelected ? 'bg-blue-400 ring-4 ring-blue-300' : 'bg-gray-200 hover:bg-gray-300'} cursor-pointer`
                 }

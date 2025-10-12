@@ -2,11 +2,15 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSettings } from "../contexts/SettingsContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function SettingsPage() {
   const [nickname, setNickname] = useState("");
   const { componentScale, fontScale, setComponentScale, setFontScale } = useSettings();
+  const { logout } = useAuth();
+  const router = useRouter();
 
   const handleSave = () => {
     // Save nickname logic here
@@ -14,13 +18,17 @@ export default function SettingsPage() {
   };
 
   const handleLogout = () => {
-    // Logout logic here
-    console.log("Logging out...");
+    if (confirm("Are you sure you want to logout?")) {
+      logout();
+      router.push("/splash");
+    }
   };
 
   const handleDeactivate = () => {
-    // Deactivate account logic here
-    console.log("Deactivating account...");
+    if (confirm("Are you sure you want to deactivate your account? This action cannot be undone.")) {
+      // Deactivate account logic here
+      console.log("Deactivating account...");
+    }
   };
 
   const handleResetSettings = () => {

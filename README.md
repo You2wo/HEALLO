@@ -1,36 +1,130 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# My NextJS App
 
-## Getting Started
+A full-stack Next.js application with authentication, journaling, mood tracking, and goal management.
 
-First, run the development server:
+## 🚀 Quick Start
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### Prerequisites
+- Node.js 18+ and npm
+- Git
+
+### Setup
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd my-nextjs-app
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Create environment file**
+   ```bash
+   cp .env .env.local  # or create manually
+   ```
+
+   Your `.env` file should contain:
+   ```env
+   DATABASE_URL="file:./dev.db"
+   JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
+   ```
+
+4. **Initialize database**
+   ```bash
+   npm run setup
+   ```
+
+   This will:
+   - Generate Prisma client
+   - Create the SQLite database
+   - Apply the schema
+
+5. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## 🔧 Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run setup` - Initialize database (first time setup)
+
+## 🏗️ Project Structure
+
+```
+src/
+├── app/                 # Next.js App Router
+│   ├── api/             # API routes
+│   ├── (pages)/         # Page components
+│   └── components/      # Reusable components
+├── contexts/            # React contexts
+├── lib/                 # Utility functions
+└── prisma/
+    └── schema.prisma    # Database schema
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Deployment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### To Vercel
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Change database configuration:**
+   ``` prism
+   // prisma/schema.prisma
+   datasource db {
+     provider = "postgresql"
+     url      = env("DATABASE_URL")
+   }
+   ```
 
-## Learn More
+2. **Set up Vercel Postgres:**
+   - Create database in Vercel dashboard
+   - Add `DATABASE_URL` to environment variables
+   - Add `JWT_SECRET` to environment variables
 
-To learn more about Next.js, take a look at the following resources:
+3. **Deploy:**
+   ```bash
+   npx prisma generate
+   npx prisma db push
+   npx vercel --prod
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📝 Features
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- 🔐 User authentication (register/login)
+- 📓 Journal entries
+- 😊 Mood tracking
+- 🎯 Goal management
+- 🔥 Streak tracking
+- 🐾 Virtual pet game
 
-## Deploy on Vercel
+## 🛠️ Tech Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Framework:** Next.js 15 (App Router)
+- **Database:** SQLite (local) / PostgreSQL (production)
+- **ORM:** Prisma
+- **Authentication:** JWT
+- **UI:** React + Tailwind CSS
+- **Game:** Phaser.js
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🔍 Troubleshooting
+
+### "Internal server error" on login
+1. Check if `.env` file exists with correct `DATABASE_URL`
+2. Run `npm run setup` to initialize database
+3. Ensure `prisma/dev.db` file exists
+
+### Database issues when transferring project
+- The `prisma/dev.db` file is gitignored
+- Always use `npm run setup` on new machines
+- Never transfer database files between machines
+
+## 📄 License
+
+MIT License

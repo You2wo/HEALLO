@@ -16,6 +16,8 @@ model User {
   email     String   @unique
   password  String
   nickname  String?
+  isDemo    Boolean  @default(false)
+  personalization String? // 'Connection & Social', 'Self-Care & Wellness', 'Growth & Expression'
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -92,6 +94,7 @@ model PetSettings {
   petType   String?  @default("default")
   petLevel  Int      @default(1)
   petXp     Int      @default(0)
+  goalXp    Int      @default(0) // XP banked from goal completions
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

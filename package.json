@@ -12,15 +12,15 @@
     "vercel-build": "prisma generate && prisma migrate deploy && next build"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
     "@prisma/client": "^6.17.1",
     "bcryptjs": "^3.0.2",
     "jsonwebtoken": "^9.0.2",
-    "next": "15.5.4",
+    "next": "^15.5.26",
     "phaser": "^3.90.0",
     "prisma": "^6.17.1",
     "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "setup": "^0.0.3"
+    "react-dom": "19.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -31,9 +31,10 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.5.4",
+    "eslint-config-next": "^15.5.26",
     "prisma": "^6.17.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   }
 }

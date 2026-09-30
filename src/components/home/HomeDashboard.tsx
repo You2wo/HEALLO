@@ -99,7 +99,10 @@ export const HomeDashboard = (): React.JSX.Element => {
       <div className="relative h-[40dvh] md:col-span-2 md:h-[44dvh] lg:order-2 lg:col-span-1 lg:h-auto">
         <PetScene onPetTap={nextLine} celebrateKey={celebrateKey}>
           {speech && (
-            <div className="absolute inset-x-3 top-3 flex justify-center md:top-5">
+            <div
+              className="absolute inset-x-3 flex justify-center"
+              style={{ bottom: "min(calc(100% - var(--pet-top, 30%) + 1.5rem), calc(100% - 4.5rem))" }}
+            >
               <button
                 type="button"
                 onClick={nextLine}

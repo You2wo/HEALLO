@@ -91,9 +91,9 @@ function JournalView() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
         {/* Entry list: hidden on phones while an entry is open */}
-        <div className={selected ? "hidden lg:block" : ""}>
+        <div className={selected ? "hidden min-w-0 lg:block" : "min-w-0"}>
           {journals === null ? (
             <div className="space-y-3" aria-busy="true">
               <span className="sr-only">Loading…</span>
@@ -154,7 +154,7 @@ function JournalView() {
         </div>
 
         {/* Journal Entry */}
-        <div className={selected ? "" : "hidden lg:block"}>
+        <div className={selected ? "min-w-0" : "hidden min-w-0 lg:block"}>
           {selected ? (
             <article className="card p-5 md:p-8">
               <button type="button" className="btn btn-ghost -ml-3 mb-3 px-3 py-1.5 lg:hidden" onClick={() => setSelectedId(null)}>

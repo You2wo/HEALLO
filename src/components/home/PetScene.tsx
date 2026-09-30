@@ -72,6 +72,8 @@ export const PetScene: React.FC<PetSceneProps> = ({ onPetTap, celebrateKey = 0, 
       function layout(scene: Phaser.Scene) {
         const home = homePosition(scene);
         petHolder.setPosition(home.x, home.y);
+        // Lets the speech bubble sit just above the pet's head.
+        host?.parentElement?.style.setProperty("--pet-top", `${Math.round(home.y - pet.displayHeight)}px`);
       }
 
       function create(this: Phaser.Scene) {

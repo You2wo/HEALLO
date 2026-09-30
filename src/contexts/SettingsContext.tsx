@@ -22,7 +22,8 @@ export const useSettings = () => {
 };
 
 // Runs before first paint so the saved theme and font size never flash.
-export const settingsBootScript = `(function(){try{var d=document.documentElement;var t=localStorage.getItem('theme');if(t!=='light'&&t!=='dark'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}d.dataset.theme=t;var f=parseFloat(localStorage.getItem('fontScale'));if(f>=0.8&&f<=1.4){d.style.setProperty('--font-scale',f)}}catch(e){}})()`;
+// Light is the default; dark applies only once the user picks it.
+export const settingsBootScript = `(function(){try{var d=document.documentElement;d.dataset.theme=localStorage.getItem('theme')==='dark'?'dark':'light';var f=parseFloat(localStorage.getItem('fontScale'));if(f>=0.8&&f<=1.4){d.style.setProperty('--font-scale',f)}}catch(e){}})()`;
 
 export const SettingsProvider = ({ children }: { children: React.ReactNode }) => {
   const [fontScale, setFontScaleState] = useState(1);

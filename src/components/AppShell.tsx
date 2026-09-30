@@ -17,7 +17,7 @@ function ThemeToggle() {
   const { theme, setTheme } = useSettings();
   const next = theme === 'dark' ? 'light' : 'dark';
   return (
-    <button type="button" className="icon-btn" onClick={() => setTheme(next)} aria-label={`Switch to ${next} theme`}>
+    <button type="button" className="icon-btn max-sm:size-9" onClick={() => setTheme(next)} aria-label={`Switch to ${next} theme`}>
       {theme === 'dark' ? <Sun size={22} aria-hidden="true" /> : <Moon size={22} aria-hidden="true" />}
     </button>
   );
@@ -29,7 +29,7 @@ function NavLink({ href, label, className = '' }: { href: string; label: string;
     <Link
       href={href}
       aria-current={active ? 'page' : undefined}
-      className={`${className} rounded-full px-3 py-2 font-medium transition-colors sm:px-4 ${
+      className={`${className} rounded-full px-2 py-2 text-sm font-medium transition-colors sm:px-4 sm:text-base ${
         active ? 'bg-accent-soft text-accent' : 'text-muted hover:text-ink'
       }`}
     >
@@ -45,10 +45,10 @@ export function AppShell({ children, fill }: { children: React.ReactNode; fill?:
   return (
     <div className={`flex flex-col ${fill ? 'h-dvh' : 'min-h-dvh'}`}>
       <header className="shrink-0 border-b border-line bg-surface/85 backdrop-blur">
-        <nav aria-label="Main" className="mx-auto flex h-16 max-w-[1400px] items-center gap-1 px-3 sm:gap-2 sm:px-6">
+        <nav aria-label="Main" className="mx-auto flex h-16 max-w-[1400px] items-center gap-0.5 px-2 sm:gap-2 sm:px-6">
           <Link href="/" className="mr-auto flex shrink-0 items-center rounded-full px-1" aria-label="Haello home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/textlogo.svg" alt="" width={141} height={39} className="h-7 w-auto sm:h-8" translate="no" />
+            <img src="/textlogo.svg" alt="" width={141} height={39} className="h-6 w-auto sm:h-8" translate="no" />
           </Link>
 
           {isAuthenticated ? (
@@ -61,7 +61,7 @@ export function AppShell({ children, fill }: { children: React.ReactNode; fill?:
                   Demo account
                 </span>
               )}
-              <Link href="/settings" className="icon-btn" aria-label="Settings">
+              <Link href="/settings" className="icon-btn max-sm:size-9" aria-label="Settings">
                 <GearSix size={22} aria-hidden="true" />
               </Link>
             </>

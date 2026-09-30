@@ -1,89 +1,83 @@
-# HEALLO
+# Haello
 
-This project is a Next.js application.
+A self-care web app with a virtual pet. Log your mood, keep a journal and tick off small routines; the pet earns experience and levels up as you do.
 
-## Prerequisites
+Live: https://haello.vercel.app (use **Try the Demo** for a pre-filled account).
 
-- Node.js (version >= 18)
-- npm or yarn
+## Features
 
-## Installation
+- Mood calendar with one check-in per day and a journal entry attached to it
+- Routines that reopen daily, weekly, every two weeks or monthly
+- Streak counter based on consecutive logged days
+- A pet (Phaser scene) that gains XP from your activity, levels up and reacts to your day
+- A short questionnaire that suggests starter routines
+- One-click demo account with three weeks of sample data
+- Light and dark themes, adjustable font size, phone to desktop layouts
 
-1. Clone the repository:
+## Stack
 
-   ```bash
-   git clone <repository_url>
-   cd my-nextjs-app
-   ```
+Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, Prisma, PostgreSQL, Phaser 3.
 
-2. Install dependencies:
+## Running locally
+
+Requires Node.js 20 or newer and a PostgreSQL database.
+
+1. Install dependencies:
 
    ```bash
    npm install
-   # or
-   yarn install
    ```
 
-3. Set up the environment variables:
+2. Copy `.env.example` to `.env` and fill it in:
 
-   Create a `.env` file in the root directory and add the necessary environment variables.  Refer to `.env.example` if available, or the project documentation for the required variables.
+   ```
+   DATABASE_URL="postgresql://user:password@host:5432/dbname"
+   JWT_SECRET="a-long-random-string"
+   ```
 
-   Example:
-    ```
-    DATABASE_URL="your_database_url"
-    NEXTAUTH_SECRET="your_nextauth_secret"
-    NEXTAUTH_URL="http://localhost:3000"
-    ```
+   For a throwaway local database, `npx prisma dev` starts one and prints its URL.
 
-4. Run Prisma migrations:
+3. Create the tables:
 
    ```bash
-   npx prisma migrate dev
+   npx prisma migrate deploy
    ```
 
-## Running the Application
-
-1. Start the development server:
+4. Start the dev server at http://localhost:3000:
 
    ```bash
    npm run dev
-   # or
-   yarn dev
    ```
 
-   This will start the Next.js development server at `http://localhost:3000`.
+## Scripts
 
-## Running the Backend
+| Command | What it does |
+|---|---|
+| `npm run dev` | Development server |
+| `npm run build` | Production build |
+| `npm run start` | Serve the production build |
+| `npm test` | Unit tests (dates, streak, XP, goal periods, pet speech) |
+| `npm run lint` | ESLint |
 
-The backend is implemented using Next.js API routes in the `src/app/api` directory. These routes handle API requests and interact with the database.
+## How the pet earns XP
 
-To access the backend API, send requests to the appropriate endpoints. For example:
+| Action | XP |
+|---|---|
+| Logging a mood for a day | 10 |
+| Writing notes with it | 5 |
+| Completing a routine | 5 |
+| Every 7 days of longest streak | 20 |
 
-- `GET /api/auth/me`: Get the current user's information.
-- `POST /api/auth/login`: Log in a user.
-- `POST /api/auth/register`: Register a new user.
-- `GET /api/goals`: Get all goals.
-- `POST /api/goals`: Create a new goal.
+Level `n` starts at `25 * n * (n - 1)` XP. XP is computed on the server in `src/lib/game.ts`; the client cannot set it.
 
-Refer to the API route files in `src/app/api` for more information on the available endpoints and their functionality.
+## Project layout
+
+- `src/app` - pages and API routes (`src/app/api`)
+- `src/components` - UI components; `home/` holds the dashboard and the pet scene
+- `src/lib` - API client, auth, date handling, XP and streak rules, pet speech
+- `prisma` - schema and migrations
+- `tests` - unit tests
 
 ## Deployment
 
-The project is configured for deployment on Vercel. You can deploy the project by pushing it to a Vercel repository.
-
-Alternatively, you can use the following command to build the project for production:
-
-```bash
-npm run build
-```
-
-And then run the project in production mode:
-
-```bash
-npm run start
-```
-
-## Additional Notes
-
-- The `test-api.js` file can be used to test the API endpoints.
-- The `prisma` directory contains the Prisma schema and migrations.
+Deployed on Vercel. The build command in `vercel.json` runs `prisma migrate deploy`, so new migrations are applied on each deploy. Set `DATABASE_URL` and `JWT_SECRET` in the Vercel project's environment variables.

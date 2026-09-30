@@ -1,255 +1,276 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSettings } from "../contexts/SettingsContext";
+import { AppShell, RequireAuth } from "@/components/AppShell";
+import { ConfirmDialog, Dialog } from "@/components/ui/Dialog";
+import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSettings, type Theme } from "@/contexts/SettingsContext";
+import { authApi, petApi } from "@/lib/api";
 
-export default function SettingsPage() {
-  const [nickname, setNickname] = useState("");
-  const { componentScale, fontScale, setComponentScale, setFontScale } = useSettings();
-  const { logout, isAuthenticated, loading } = useAuth();
+const errorText = (error: unknown, fallback: string) => (error instanceof Error ? error.message : fallback);
+
+function SettingsView() {
+  const { user, setUser, logout } = useAuth();
+  const { fontScale, setFontScale, theme, setTheme } = useSettings();
   const router = useRouter();
+  const toast = useToast();
 
-  // Redirect to splash if not authenticated
+  const [nickname, setNickname] = useState(user?.nickname ?? "");
+  const [petName, setPetName] = useState("");
+  const [savedPetName, setSavedPetName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push('/splash');
-    }
-  }, [isAuthenticated, loading, router]);
+    petApi
+      .get()
+      .then((game) => {
+        setPetName(game.pet.name);
+        setSavedPetName(game.pet.name);
+      })
+      .catch(() => {});
+  }, []);
 
-  const handleSave = () => {
-    // Save nickname logic here
-    console.log("Saving nickname:", nickname);
+  const dirty = nickname.trim() !== (user?.nickname ?? "") || petName.trim() !== savedPetName;
+
+  const handleSave = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!nickname.trim() || !petName.trim()) {
+      toast("Your nickname and your pet's name cannot be empty.", "error");
+      return;
+    }
+    setSaving(true);
+    try {
+      const [profile, game] = await Promise.all([authApi.update({ nickname }), petApi.rename(petName)]);
+      setUser(profile.user);
+      setNickname(profile.user.nickname ?? "");
+      setPetName(game.pet.name);
+      setSavedPetName(game.pet.name);
+      toast("Profile saved.");
+    } catch (error) {
+      toast(errorText(error, "Could not save your profile. Please try again."), "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleLogout = () => {
-    if (confirm("Are you sure you want to logout?")) {
+    logout();
+    router.push("/splash");
+  };
+
+  const handleDelete = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      await authApi.deleteAccount(password);
       logout();
       router.push("/splash");
+    } catch (error) {
+      setDeleteError(errorText(error, "Could not delete the account. Please try again."));
+      setDeleting(false);
     }
   };
-
-  const handleDeactivate = () => {
-    if (confirm("Are you sure you want to deactivate your account? This action cannot be undone.")) {
-      console.log("Deactivating account...");
-    }
-  };
-
-  const handleResetSettings = () => {
-    setComponentScale(1);
-    setFontScale(1);
-  };
-
-  // Show loading state while checking authentication or redirecting
-  if (loading || !isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-xl text-gray-600">Loading...</div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-4 md:p-8">
-      {/* Header/Navigation */}
-      <header className="max-w-6xl mx-auto mb-8">
-        <nav className="flex items-center justify-center gap-6">
-          <Link href="/settings" className="text-gray-600 hover:text-gray-800 transition-colors" aria-label="Settings">
-            <svg className="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </Link>
-          <Link href="/" className="text-gray-900 hover:text-gray-700 transition-colors text-lg md:text-xl font-medium">
-            Home
-          </Link>
-          <Link href="/journal" className="text-gray-900 hover:text-gray-700 transition-colors text-lg md:text-xl font-medium">
-            Journal
-          </Link>
-          <button className="text-gray-900 hover:text-gray-700 transition-colors text-lg md:text-xl font-medium">
-            About
-          </button>
-        </nav>
-      </header>
+    <div className="mx-auto max-w-2xl space-y-5 p-4 md:p-8">
+      <h1 className="text-4xl font-bold">Settings</h1>
 
-      {/* Settings Content */}
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-5xl md:text-6xl font-bold text-gray-800 mb-12">Settings</h1>
-
-        {/* Main Settings Card */}
-        <div className="bg-white rounded-3xl shadow-lg p-8 md:p-12 mb-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-8 mb-8">
-            {/* Pet Avatar */}
-            <div className="flex-shrink-0">
-              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full flex items-center justify-center" style={{ backgroundColor: '#0378FF' }}>
-                <img 
-                  src="/nickname.svg" 
-                  alt="Pet Avatar" 
-                  className="w-28 h-28 md:w-36 md:h-36"
-                />
-              </div>
+      {/* Profile */}
+      <form onSubmit={handleSave} className="card p-5 md:p-8">
+        <h2 className="mb-5 text-xl font-bold">Profile</h2>
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/nickname.svg" alt="" width={96} height={93} className="size-24 shrink-0 rounded-full bg-[#0378ff] p-1" />
+          <div className="min-w-0 flex-1 space-y-4">
+            <div>
+              <label htmlFor="nickname" className="label">
+                What should I call you?
+              </label>
+              <input
+                id="nickname"
+                name="nickname"
+                type="text"
+                autoComplete="nickname"
+                maxLength={30}
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                className="field"
+              />
             </div>
-
-            {/* Nickname Input Section */}
-            <div className="flex-1 w-full">
-              <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 mb-4 relative">
-                <div className="absolute -top-3 left-6 bg-white px-2">
-                  <p className="text-gray-600 text-sm">what should I call you?</p>
-                </div>
-                <input
-                  type="text"
-                  placeholder="Nickname"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  className="w-full text-lg text-gray-400 outline-none border-b-2 border-gray-200 pb-2 focus:border-blue-500 transition-colors"
-                />
-              </div>
-
-              {/* Save Button */}
-              <div className="flex justify-end">
-                <button
-                  onClick={handleSave}
-                  className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-12 py-3 rounded-full shadow-lg transition-all hover:shadow-xl"
-                >
-                  Save
-                </button>
-              </div>
+            <div>
+              <label htmlFor="pet-name" className="label">
+                Your pet&apos;s name
+              </label>
+              <input
+                id="pet-name"
+                name="petName"
+                type="text"
+                autoComplete="off"
+                maxLength={20}
+                value={petName}
+                onChange={(e) => setPetName(e.target.value)}
+                className="field"
+              />
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="min-w-0 break-words text-sm text-muted">
+                {user?.isDemo ? "Demo account, removed after 24 hours" : user?.email}
+              </p>
+              <button type="submit" className="btn btn-primary" disabled={!dirty || saving}>
+                {saving ? "Saving…" : "Save Profile"}
+              </button>
             </div>
           </div>
         </div>
+      </form>
 
-        {/* Customization Settings Card */}
-        <div className="bg-white rounded-3xl shadow-lg p-8 md:p-12 mb-6">
-          <h2 className="text-3xl font-bold text-gray-800 mb-8">Customization</h2>
+      {/* Appearance */}
+      <section className="card p-5 md:p-8" aria-labelledby="appearance-heading">
+        <h2 id="appearance-heading" className="mb-5 text-xl font-bold">
+          Appearance
+        </h2>
 
-          {/* Component Size Slider */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <label className="text-lg font-semibold text-gray-700">
-                Component Size
+        <fieldset className="mb-6">
+          <legend className="label">Theme</legend>
+          <div className="grid grid-cols-2 gap-2">
+            {(["light", "dark"] as Theme[]).map((option) => (
+              <label
+                key={option}
+                className={`cursor-pointer rounded-field border-2 px-4 py-2.5 text-center font-medium capitalize transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent ${
+                  theme === option ? "border-accent bg-accent-soft text-accent" : "border-line text-muted hover:border-accent"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="theme"
+                  value={option}
+                  checked={theme === option}
+                  onChange={() => setTheme(option)}
+                  className="sr-only"
+                />
+                {option}
               </label>
-              <span className="text-lg font-bold text-blue-600">
-                {Math.round(componentScale * 100)}%
-              </span>
-            </div>
-            <input
-              type="range"
-              min="0.7"
-              max="1.3"
-              step="0.05"
-              value={componentScale}
-              onChange={(e) => setComponentScale(parseFloat(e.target.value))}
-              className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-            />
-            <div className="flex justify-between text-sm text-gray-500 mt-2">
-              <span>Small (70%)</span>
-              <span>Normal (100%)</span>
-              <span>Large (130%)</span>
-            </div>
+            ))}
           </div>
+        </fieldset>
 
-          {/* Font Size Slider */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <label className="text-lg font-semibold text-gray-700">
-                Font Size
-              </label>
-              <span className="text-lg font-bold text-blue-600">
-                {Math.round(fontScale * 100)}%
-              </span>
-            </div>
-            <input
-              type="range"
-              min="0.8"
-              max="1.4"
-              step="0.05"
-              value={fontScale}
-              onChange={(e) => setFontScale(parseFloat(e.target.value))}
-              className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-            />
-            <div className="flex justify-between text-sm text-gray-500 mt-2">
-              <span>Small (80%)</span>
-              <span>Normal (100%)</span>
-              <span>Large (140%)</span>
-            </div>
-          </div>
+        {/* Font Size Slider */}
+        <div className="flex items-center justify-between">
+          <label htmlFor="font-size" className="label mb-0">
+            Font Size
+          </label>
+          <span className="font-semibold text-accent tabular-nums">{Math.round(fontScale * 100)}%</span>
+        </div>
+        <input
+          id="font-size"
+          type="range"
+          min="0.8"
+          max="1.4"
+          step="0.05"
+          value={fontScale}
+          onChange={(e) => setFontScale(parseFloat(e.target.value))}
+          className="mt-3 w-full"
+        />
+        <div className="mt-1 flex justify-between text-sm text-muted">
+          <span>Small</span>
+          <span>Large</span>
+        </div>
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <p className="text-muted">Text across the app follows this size.</p>
+          <button type="button" className="btn btn-ghost" onClick={() => setFontScale(1)} disabled={fontScale === 1}>
+            Reset
+          </button>
+        </div>
+      </section>
 
-          {/* Preview Text */}
-          <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border-2 border-blue-200">
-            <p className="text-gray-600 mb-2" style={{ fontSize: `calc(0.875rem * ${fontScale})` }}>
-              Preview Text
+      {/* Account */}
+      <section className="card p-5 md:p-8" aria-labelledby="account-heading">
+        <h2 id="account-heading" className="mb-5 text-xl font-bold">
+          Account
+        </h2>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Link href="/about" className="btn btn-ghost sm:mr-auto">
+            About Haello
+          </Link>
+          <button type="button" className="btn btn-secondary" onClick={() => setConfirmLogout(true)}>
+            Log Out
+          </button>
+          {!user?.isDemo && (
+            <button type="button" className="btn btn-danger" onClick={() => setDeleteOpen(true)}>
+              Delete Account
+            </button>
+          )}
+        </div>
+      </section>
+
+      <ConfirmDialog
+        open={confirmLogout}
+        onClose={() => setConfirmLogout(false)}
+        onConfirm={handleLogout}
+        title="Log out?"
+        message={
+          user?.isDemo
+            ? "This demo account cannot be reopened after you log out. You can start a fresh demo any time."
+            : "You will need your email and password to get back in."
+        }
+        confirmLabel="Log Out"
+      />
+
+      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete your account?">
+        <form onSubmit={handleDelete}>
+          <p className="mb-5 text-muted">
+            This permanently deletes your journal, moods, routines and pet. It cannot be undone. Enter your password to
+            confirm.
+          </p>
+          <label htmlFor="delete-password" className="label">
+            Password
+          </label>
+          <input
+            id="delete-password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            aria-invalid={!!deleteError}
+            aria-describedby={deleteError ? "delete-error" : undefined}
+            className="field"
+            required
+          />
+          {deleteError && (
+            <p id="delete-error" role="alert" className="mt-2 text-sm text-danger">
+              {deleteError}
             </p>
-            <h3 className="font-bold text-gray-900 mb-2" style={{ fontSize: `calc(1.5rem * ${fontScale})` }}>
-              This is how your text will look
-            </h3>
-            <p className="text-gray-600" style={{ fontSize: `calc(1rem * ${fontScale})` }}>
-              Adjust the sliders above to customize the size of components and text throughout the app.
-            </p>
-          </div>
-
-          {/* Reset Button */}
-          <div className="flex justify-end mt-6">
-            <button
-              onClick={handleResetSettings}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold px-8 py-3 rounded-full transition-all"
-            >
-              Reset to Default
+          )}
+          <div className="mt-8 flex flex-wrap justify-end gap-3">
+            <button type="button" className="btn btn-ghost" onClick={() => setDeleteOpen(false)}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-danger" disabled={deleting}>
+              {deleting ? "Deleting…" : "Delete Account"}
             </button>
           </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col md:flex-row gap-4">
-          <button
-            onClick={handleLogout}
-            className="flex-1 bg-white hover:bg-gray-50 text-blue-600 font-semibold py-4 rounded-2xl border-2 border-blue-600 transition-all shadow-md hover:shadow-lg"
-          >
-            Logout
-          </button>
-          <button
-            onClick={handleDeactivate}
-            className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-4 rounded-2xl transition-all shadow-md hover:shadow-lg"
-          >
-            Deactive Account
-          </button>
-        </div>
-      </div>
-
-      <style jsx>{`
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-          cursor: pointer;
-          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
-          transition: all 0.2s ease;
-        }
-
-        .slider::-webkit-slider-thumb:hover {
-          transform: scale(1.2);
-          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.6);
-        }
-
-        .slider::-moz-range-thumb {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-          cursor: pointer;
-          border: none;
-          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
-          transition: all 0.2s ease;
-        }
-
-        .slider::-moz-range-thumb:hover {
-          transform: scale(1.2);
-          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.6);
-        }
-      `}</style>
+        </form>
+      </Dialog>
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <AppShell>
+      <RequireAuth>
+        <SettingsView />
+      </RequireAuth>
+    </AppShell>
   );
 }

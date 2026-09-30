@@ -1,164 +1,88 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getUserFromRequest } from '@/lib/auth';
+import { clientToday } from '@/lib/dates';
+import { syncPet } from '@/lib/game';
+import { isMood } from '@/lib/moods';
+import { currentUser, errorResponse, serverError, unauthorized } from '@/lib/http';
+
+type RouteContext = { params: Promise<{ id: string }> };
 
 // GET a specific journal entry
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
-    const userPayload = getUserFromRequest(request);
-    
-    if (!userPayload) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const userPayload = currentUser(request);
+    if (!userPayload) return unauthorized();
 
+    const { id } = await params;
     const journal = await prisma.journal.findFirst({
-      where: {
-        id: params.id,
-        userId: userPayload.userId,
-      }
+      where: { id, userId: userPayload.userId },
     });
 
-    if (!journal) {
-      return NextResponse.json(
-        { error: 'Journal not found' },
-        { status: 404 }
-      );
-    }
+    if (!journal) return errorResponse('Journal not found', 404);
 
     return NextResponse.json({ journal });
-
   } catch (error) {
-    console.error('Get journal error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return serverError('Get journal error', error);
   }
 }
 
 // PUT update a journal entry
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, { params }: RouteContext) {
   try {
-    const userPayload = getUserFromRequest(request);
-    
-    if (!userPayload) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const userPayload = currentUser(request);
+    if (!userPayload) return unauthorized();
 
+    const { id } = await params;
+    const userId = userPayload.userId;
     const body = await request.json();
-    const { mood, notes } = body;
 
-    // Check if journal exists and belongs to user
-    const existingJournal = await prisma.journal.findFirst({
-      where: {
-        id: params.id,
-        userId: userPayload.userId,
-      }
-    });
+    const existingJournal = await prisma.journal.findFirst({ where: { id, userId } });
+    if (!existingJournal) return errorResponse('Journal not found', 404);
 
-    if (!existingJournal) {
-      return NextResponse.json(
-        { error: 'Journal not found' },
-        { status: 404 }
-      );
+    if (body.mood !== undefined && !isMood(body.mood)) {
+      return errorResponse('Unknown mood', 400);
     }
 
-    const journal = await prisma.journal.update({
-      where: { id: params.id },
-      data: {
-        mood: mood || existingJournal.mood,
-        notes: notes !== undefined ? notes : existingJournal.notes,
-      }
-    });
+    const mood: string = body.mood ?? existingJournal.mood;
+    const notes = body.notes !== undefined ? String(body.notes).trim() || null : existingJournal.notes;
 
-    // Also update mood entry
-    if (mood) {
-      await prisma.mood.updateMany({
-        where: {
-          userId: userPayload.userId,
-          date: existingJournal.date,
-        },
-        data: { mood }
-      });
-    }
+    const [journal] = await prisma.$transaction([
+      prisma.journal.update({ where: { id }, data: { mood, notes } }),
+      prisma.mood.updateMany({ where: { userId, date: existingJournal.date }, data: { mood } }),
+    ]);
 
     return NextResponse.json({
       message: 'Journal updated successfully',
       journal,
+      ...(await syncPet(userId, clientToday(request))),
     });
-
   } catch (error) {
-    console.error('Update journal error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return serverError('Update journal error', error);
   }
 }
 
-// DELETE a journal entry
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+// DELETE a journal entry and its mood
+export async function DELETE(request: NextRequest, { params }: RouteContext) {
   try {
-    const userPayload = getUserFromRequest(request);
-    
-    if (!userPayload) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const userPayload = currentUser(request);
+    if (!userPayload) return unauthorized();
 
-    // Check if journal exists and belongs to user
-    const existingJournal = await prisma.journal.findFirst({
-      where: {
-        id: params.id,
-        userId: userPayload.userId,
-      }
-    });
+    const { id } = await params;
+    const userId = userPayload.userId;
 
-    if (!existingJournal) {
-      return NextResponse.json(
-        { error: 'Journal not found' },
-        { status: 404 }
-      );
-    }
+    const existingJournal = await prisma.journal.findFirst({ where: { id, userId } });
+    if (!existingJournal) return errorResponse('Journal not found', 404);
 
-    await prisma.journal.delete({
-      where: { id: params.id }
-    });
-
-    // Also delete mood entry
-    await prisma.mood.deleteMany({
-      where: {
-        userId: userPayload.userId,
-        date: existingJournal.date,
-      }
-    });
+    await prisma.$transaction([
+      prisma.journal.delete({ where: { id } }),
+      prisma.mood.deleteMany({ where: { userId, date: existingJournal.date } }),
+    ]);
 
     return NextResponse.json({
       message: 'Journal deleted successfully',
+      ...(await syncPet(userId, clientToday(request))),
     });
-
   } catch (error) {
-    console.error('Delete journal error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return serverError('Delete journal error', error);
   }
 }

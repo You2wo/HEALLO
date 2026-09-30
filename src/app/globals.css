@@ -1,140 +1,222 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f2f7fe;
+  --surface: #fdfeff;
+  --surface-2: #e9f1fd;
+  --ink: #16233a;
+  --muted: #56667f;
+  --line: #d3e0f3;
+  --accent: #1d64e8;
+  --accent-strong: #154fc0;
+  --accent-soft: #e2edff;
+  --on-accent: #fdfeff;
+  --danger: #c93434;
+  --danger-soft: #fdeaea;
+  --streak: #f47b20;
+  --shadow: 215 60% 40%;
+
+  --mood-good: #f5b700;
+  --mood-neutral: #3b82f6;
+  --mood-bad: #ef4444;
+  --mood-stress: #f97316;
+  --mood-meh: #5cc8dc;
+  --mood-none: #cfd9e8;
+
+  --font-scale: 1;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0c1424;
+  --surface: #141f37;
+  --surface-2: #1b2946;
+  --ink: #e8eefb;
+  --muted: #a3b3cf;
+  --line: #2b3b60;
+  --accent: #6aa5ff;
+  --accent-strong: #8cbaff;
+  --accent-soft: #1b3059;
+  --on-accent: #0a1630;
+  --danger: #ff8080;
+  --danger-soft: #3b1c25;
+  --streak: #ff9240;
+  --shadow: 220 80% 3%;
+
+  --mood-none: #34456b;
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-streak: var(--streak);
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  /* One radius scale: cards 16px, fields 12px, buttons are pills. */
+  --radius-card: 1rem;
+  --radius-field: 0.75rem;
+  --shadow-card: 0 1px 2px hsl(var(--shadow) / 0.06), 0 8px 24px hsl(var(--shadow) / 0.08);
+  --shadow-pop: 0 2px 6px hsl(var(--shadow) / 0.1), 0 20px 48px hsl(var(--shadow) / 0.18);
+  --animate-rise: rise 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-pop: pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-* {
-  box-sizing: border-box;
+@keyframes pop {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
 }
 
 html {
-  scroll-behavior: smooth;
+  font-size: calc(100% * var(--font-scale));
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: "Poppins", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Mobile-first responsive utilities */
-.container {
-  width: 100%;
-  margin: 0 auto;
-  padding: 0 1rem;
+h1, h2, h3 {
+  text-wrap: balance;
 }
 
-@media (min-width: 640px) {
-  .container {
-    max-width: 640px;
-    padding: 0 1.5rem;
-  }
-}
-
-@media (min-width: 768px) {
-  .container {
-    max-width: 768px;
-    padding: 0 2rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .container {
-    max-width: 1024px;
-    padding: 0 2rem;
-  }
-}
-
-@media (min-width: 1280px) {
-  .container {
-    max-width: 1280px;
-    padding: 0 2rem;
-  }
-}
-
-/* Touch-friendly button styles */
-button, a {
+button, a, summary, label {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
 
-/* Prevent text size adjustment on orientation change */
-html {
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
+button:not(:disabled), summary {
+  cursor: pointer;
 }
 
-/* Improved focus styles for accessibility */
-button:focus-visible,
-a:focus-visible {
-  outline: 2px solid #3b82f6;
+:focus-visible {
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-/* Smooth transitions for interactive elements */
-.transition-all {
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
-
-/* Aspect ratio responsive scaling */
-/* Base scale for 16:10 (reference aspect ratio) */
-.aspect-scale {
-  transform-origin: top left;
-  transition: transform 0.3s ease;
-}
-
-/* For 16:9 screens (wider than 16:10) - scale down */
-@media (min-aspect-ratio: 16/9) {
-  .aspect-scale {
-    transform: scale(0.88);
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 font-semibold whitespace-nowrap select-none;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
+  }
+  .btn:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  .btn:disabled {
+    @apply cursor-not-allowed opacity-55;
+  }
+  .btn-primary {
+    @apply bg-accent text-on-accent hover:bg-accent-strong;
+  }
+  .btn-secondary {
+    @apply border border-accent bg-transparent text-accent hover:bg-accent-soft;
+  }
+  .btn-ghost {
+    @apply text-muted hover:bg-surface-2 hover:text-ink;
+  }
+  .btn-danger {
+    @apply bg-danger text-on-accent hover:opacity-90;
+  }
+  .icon-btn {
+    @apply inline-flex size-10 shrink-0 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-ink;
+    transition: background-color 0.15s, color 0.15s;
+  }
+  .card {
+    @apply rounded-card border border-line bg-surface shadow-card;
+  }
+  .field {
+    @apply w-full rounded-field border border-line bg-surface px-4 py-3 text-ink placeholder:text-muted;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field:hover {
+    border-color: var(--accent);
+  }
+  .field:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .field[aria-invalid="true"] {
+    border-color: var(--danger);
+  }
+  .label {
+    @apply mb-2 block text-sm font-medium text-ink;
+  }
+  .skeleton {
+    @apply rounded-field;
+    background: linear-gradient(90deg, var(--surface-2) 25%, var(--line) 50%, var(--surface-2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s linear infinite;
   }
 }
 
-/* For ultra-wide screens - scale down more */
-@media (min-aspect-ratio: 21/9) {
-  .aspect-scale {
-    transform: scale(0.75);
+dialog.modal {
+  margin: auto;
+  width: min(100% - 2rem, var(--modal-width, 32rem));
+  max-height: min(100dvh - 2rem, 46rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-pop);
+  padding: 0;
+}
+
+dialog.modal[open] {
+  animation: pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+dialog.modal::backdrop {
+  background: hsl(220 60% 8% / 0.5);
+  backdrop-filter: blur(3px);
+}
+
+input[type="range"] {
+  accent-color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-/* For taller screens (4:3, etc.) - keep normal or slightly smaller */
-@media (max-aspect-ratio: 4/3) {
-  .aspect-scale {
-    transform: scale(0.92);
-  }
+/* The scene artwork is daytime; dim it under the dark theme. */
+.scene-dim {
+  display: none;
+  background: hsl(222 60% 8% / 0.42);
 }
 
-/* Viewport height based scaling for very short screens */
-@media (max-height: 768px) {
-  .aspect-scale {
-    transform: scale(0.85);
-  }
-}
-
-@media (max-height: 600px) {
-  .aspect-scale {
-    transform: scale(0.75);
-  }
+:root[data-theme="dark"] .scene-dim {
+  display: block;
 }

@@ -1,5 +1,9 @@
 // API client utility for making authenticated requests
 
+import { localDateKey } from './dates';
+import type { Mood } from './moods';
+import type { LevelProgress } from './progress';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export class ApiError extends Error {
@@ -9,248 +13,176 @@ export class ApiError extends Error {
   }
 }
 
-export interface ApiResponse<T> {
-  data?: T;
-  error?: string;
-  message?: string;
+export type PersonalizationCategory = 'Connection & Social' | 'Self-Care & Wellness' | 'Growth & Expression';
+
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  nickname: string | null;
+  isDemo: boolean;
+  personalization: PersonalizationCategory | null;
+  createdAt: string;
 }
 
-// Get token from localStorage
+export interface Journal {
+  id: string;
+  date: string;
+  mood: Mood;
+  notes: string | null;
+}
+
+export interface MoodEntry {
+  id: string;
+  date: string;
+  mood: Mood | 'untracked';
+}
+
+export interface Goal {
+  id: string;
+  title: string;
+  description: string | null;
+  icon: string | null;
+  period: string;
+  completed: boolean;
+}
+
+// The pet, streak and today's mood, returned by every call that can change them.
+export interface GameState {
+  pet: { name: string } & LevelProgress;
+  streak: { current: number; longest: number };
+  moodToday: Mood | null;
+}
+
+interface AuthResponse {
+  user: User;
+  token: string;
+}
+
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('token');
 }
 
-// Save token to localStorage
 export function saveToken(token: string): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem('token', token);
 }
 
-// Remove token from localStorage
 export function removeToken(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem('token');
 }
 
 // Make authenticated API request
-async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
+async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
-  
-  const headers: HeadersInit = {
+
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...options.headers,
+    'X-Client-Date': localDateKey(),
+    ...(options.headers as Record<string, string>),
   };
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+  } catch {
+    throw new ApiError(0, 'Could not reach the server. Check your connection and try again.');
+  }
 
-  const data = await response.json();
+  const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new ApiError(response.status, data.error || 'An error occurred');
+    throw new ApiError(response.status, data.error || 'Something went wrong. Please try again.');
   }
 
   return data;
 }
 
+function monthQuery(params?: { month?: number; year?: number }): string {
+  return params?.month && params.year ? `?month=${params.month}&year=${params.year}` : '';
+}
+
+async function authenticate(endpoint: string, body?: unknown): Promise<AuthResponse> {
+  const response = await apiRequest<AuthResponse>(endpoint, {
+    method: 'POST',
+    body: JSON.stringify(body ?? {}),
+  });
+  saveToken(response.token);
+  return response;
+}
+
 // Auth API
 export const authApi = {
-  register: async (userData: {
-    username: string;
-    email: string;
-    password: string;
-    nickname?: string;
-  }) => {
-    const response = await apiRequest<{ user: any; token: string; message: string }>(
-      '/api/auth/register',
-      {
-        method: 'POST',
-        body: JSON.stringify(userData),
-      }
-    );
-    if (response.token) {
-      saveToken(response.token);
-    }
-    return response;
-  },
+  register: (userData: { username: string; email: string; password: string; nickname?: string }) =>
+    authenticate('/api/auth/register', userData),
 
-  login: async (credentials: { email: string; password: string }) => {
-    const response = await apiRequest<{ user: any; token: string; message: string }>(
-      '/api/auth/login',
-      {
-        method: 'POST',
-        body: JSON.stringify(credentials),
-      }
-    );
-    if (response.token) {
-      saveToken(response.token);
-    }
-    return response;
-  },
+  login: (credentials: { email: string; password: string }) => authenticate('/api/auth/login', credentials),
 
-  logout: () => {
-    removeToken();
-  },
+  demo: () => authenticate('/api/auth/demo'),
 
-  getMe: async () => {
-    return apiRequest<{ user: any }>('/api/auth/me');
-  },
+  logout: () => removeToken(),
+
+  getMe: () => apiRequest<{ user: User }>('/api/auth/me'),
+
+  update: (data: { nickname?: string; personalization?: PersonalizationCategory }) =>
+    apiRequest<{ user: User }>('/api/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
+
+  deleteAccount: (password: string) =>
+    apiRequest<{ message: string }>('/api/auth/me', { method: 'DELETE', body: JSON.stringify({ password }) }),
 };
 
 // Journal API
 export const journalApi = {
-  getAll: async (params?: { month?: number; year?: number }) => {
-    const queryParams = new URLSearchParams();
-    if (params?.month) queryParams.append('month', params.month.toString());
-    if (params?.year) queryParams.append('year', params.year.toString());
-    
-    const query = queryParams.toString();
-    return apiRequest<{ journals: any[] }>(
-      `/api/journals${query ? `?${query}` : ''}`
-    );
-  },
+  getAll: (params?: { month?: number; year?: number }) =>
+    apiRequest<{ journals: Journal[] }>(`/api/journals${monthQuery(params)}`),
 
-  getById: async (id: string) => {
-    return apiRequest<{ journal: any }>(`/api/journals/${id}`);
-  },
-
-  create: async (journalData: {
-    date: string;
-    mood: string;
-    notes?: string;
-  }) => {
-    return apiRequest<{ journal: any; message: string }>('/api/journals', {
+  // `date` is a YYYY-MM-DD key in the user's timezone.
+  save: (journalData: { date: string; mood: Mood; notes?: string }) =>
+    apiRequest<{ journal: Journal } & GameState>('/api/journals', {
       method: 'POST',
       body: JSON.stringify(journalData),
-    });
-  },
+    }),
 
-  update: async (id: string, journalData: { mood?: string; notes?: string }) => {
-    return apiRequest<{ journal: any; message: string }>(`/api/journals/${id}`, {
+  update: (id: string, journalData: { mood?: Mood; notes?: string }) =>
+    apiRequest<{ journal: Journal } & GameState>(`/api/journals/${id}`, {
       method: 'PUT',
       body: JSON.stringify(journalData),
-    });
-  },
+    }),
 
-  delete: async (id: string) => {
-    return apiRequest<{ message: string }>(`/api/journals/${id}`, {
-      method: 'DELETE',
-    });
-  },
+  delete: (id: string) => apiRequest<GameState>(`/api/journals/${id}`, { method: 'DELETE' }),
 };
 
 // Mood API
 export const moodApi = {
-  getAll: async (params?: { month?: number; year?: number }) => {
-    const queryParams = new URLSearchParams();
-    if (params?.month) queryParams.append('month', params.month.toString());
-    if (params?.year) queryParams.append('year', params.year.toString());
-    
-    const query = queryParams.toString();
-    return apiRequest<{ moods: any[] }>(
-      `/api/moods${query ? `?${query}` : ''}`
-    );
-  },
-
-  save: async (moodData: { date: string; mood: string }) => {
-    return apiRequest<{ mood: any; message: string }>('/api/moods', {
-      method: 'POST',
-      body: JSON.stringify(moodData),
-    });
-  },
+  getAll: (params?: { month?: number; year?: number }) =>
+    apiRequest<{ moods: MoodEntry[] }>(`/api/moods${monthQuery(params)}`),
 };
 
 // Goal API
 export const goalApi = {
-  getAll: async (params?: { completed?: boolean }) => {
-    const queryParams = new URLSearchParams();
-    if (params?.completed !== undefined) {
-      queryParams.append('completed', params.completed.toString());
-    }
-    
-    const query = queryParams.toString();
-    return apiRequest<{ goals: any[] }>(
-      `/api/goals${query ? `?${query}` : ''}`
-    );
-  },
+  getAll: () => apiRequest<{ goals: Goal[] }>('/api/goals'),
 
-  getById: async (id: string) => {
-    return apiRequest<{ goal: any }>(`/api/goals/${id}`);
-  },
+  create: (goalData: { title: string; description?: string; icon?: string; period?: string }) =>
+    apiRequest<{ goal: Goal }>('/api/goals', { method: 'POST', body: JSON.stringify(goalData) }),
 
-  create: async (goalData: {
-    title: string;
-    description?: string;
-    icon?: string;
-    period?: string;
-  }) => {
-    return apiRequest<{ goal: any; message: string }>('/api/goals', {
-      method: 'POST',
-      body: JSON.stringify(goalData),
-    });
-  },
+  update: (id: string, goalData: { title?: string; description?: string; icon?: string; period?: string }) =>
+    apiRequest<{ goal: Goal }>(`/api/goals/${id}`, { method: 'PUT', body: JSON.stringify(goalData) }),
 
-  update: async (
-    id: string,
-    goalData: {
-      title?: string;
-      description?: string;
-      icon?: string;
-      period?: string;
-      completed?: boolean;
-    }
-  ) => {
-    return apiRequest<{ goal: any; message: string }>(`/api/goals/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(goalData),
-    });
-  },
+  toggle: (id: string) => apiRequest<{ goal: Goal } & GameState>(`/api/goals/${id}`, { method: 'PATCH' }),
 
-  toggle: async (id: string) => {
-    return apiRequest<{ goal: any; message: string }>(`/api/goals/${id}`, {
-      method: 'PATCH',
-    });
-  },
-
-  delete: async (id: string) => {
-    return apiRequest<{ message: string }>(`/api/goals/${id}`, {
-      method: 'DELETE',
-    });
-  },
-};
-
-// Streak API
-export const streakApi = {
-  get: async () => {
-    return apiRequest<{ streak: any }>('/api/streak');
-  },
+  delete: (id: string) => apiRequest<{ message: string }>(`/api/goals/${id}`, { method: 'DELETE' }),
 };
 
 // Pet API
 export const petApi = {
-  get: async () => {
-    return apiRequest<{ petSettings: any }>('/api/pet');
-  },
+  get: () => apiRequest<GameState>('/api/pet'),
 
-  update: async (petData: {
-    petName?: string;
-    petType?: string;
-    petLevel?: number;
-    petXp?: number;
-  }) => {
-    return apiRequest<{ petSettings: any; message: string }>('/api/pet', {
-      method: 'PUT',
-      body: JSON.stringify(petData),
-    });
-  },
+  rename: (petName: string) =>
+    apiRequest<GameState>('/api/pet', { method: 'PUT', body: JSON.stringify({ petName }) }),
 };

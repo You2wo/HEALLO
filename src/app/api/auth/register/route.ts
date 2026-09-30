@@ -1,91 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { hashPassword, generateToken } from '@/lib/auth';
+import { hashPassword, generateToken, publicUserSelect } from '@/lib/auth';
+import { errorResponse, serverError } from '@/lib/http';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { username, email, password, nickname } = body;
+    const username = String(body.username ?? '').trim();
+    const email = String(body.email ?? '').trim().toLowerCase();
+    const password = String(body.password ?? '');
+    const nickname = String(body.nickname ?? '').trim() || username;
 
-    // Validate input
     if (!username || !email || !password) {
-      return NextResponse.json(
-        { error: 'Username, email, and password are required' },
-        { status: 400 }
-      );
+      return errorResponse('Username, email, and password are required', 400);
+    }
+    if (password.length < 6) {
+      return errorResponse('Password must be at least 6 characters long', 400);
     }
 
-    // Check if user already exists
     const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email },
-          { username }
-        ]
-      }
+      where: { OR: [{ email }, { username }] },
+      select: { email: true },
     });
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: 'User with this email or username already exists' },
-        { status: 409 }
+      return errorResponse(
+        existingUser.email === email
+          ? 'An account with this email already exists. Try logging in instead.'
+          : 'That username is taken. Please choose another.',
+        409
       );
     }
 
-    // Hash password
-    const hashedPassword = await hashPassword(password);
-
-    // Create user
     const user = await prisma.user.create({
       data: {
         username,
         email,
-        password: hashedPassword,
-        nickname: nickname || username,
+        password: await hashPassword(password),
+        nickname,
+        streaks: { create: {} },
+        petSettings: { create: { petName: 'Heallo', petType: 'default' } },
       },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        nickname: true,
-        createdAt: true,
-      }
+      select: publicUserSelect,
     });
 
-    // Create initial streak record
-    await prisma.streak.create({
-      data: {
-        userId: user.id,
-        currentStreak: 0,
-        longestStreak: 0,
-      }
-    });
-
-    // Create initial pet settings
-    await prisma.petSettings.create({
-      data: {
-        userId: user.id,
-        petName: nickname || username,
-        petType: 'default',
-        petLevel: 1,
-        petXp: 0,
-      }
-    });
-
-    // Generate JWT token
     const token = generateToken({ userId: user.id, email: user.email });
 
-    return NextResponse.json({
-      message: 'User registered successfully',
-      user,
-      token,
-    }, { status: 201 });
-
+    return NextResponse.json({ message: 'User registered successfully', user, token }, { status: 201 });
   } catch (error) {
-    console.error('Registration error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return serverError('Registration error', error);
   }
 }

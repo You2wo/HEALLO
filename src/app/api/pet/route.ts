@@ -1,95 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getUserFromRequest } from '@/lib/auth';
+import { clientToday } from '@/lib/dates';
+import { syncPet } from '@/lib/game';
+import { currentUser, errorResponse, serverError, unauthorized } from '@/lib/http';
 
-// GET pet settings for the authenticated user
+// GET the pet, streak and today's mood for the authenticated user
 export async function GET(request: NextRequest) {
   try {
-    const userPayload = getUserFromRequest(request);
-    
-    if (!userPayload) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const userPayload = currentUser(request);
+    if (!userPayload) return unauthorized();
 
-    let petSettings = await prisma.petSettings.findUnique({
-      where: { userId: userPayload.userId }
-    });
-
-    // If no pet settings exist, create default ones
-    if (!petSettings) {
-      const user = await prisma.user.findUnique({
-        where: { id: userPayload.userId },
-        select: { nickname: true, username: true }
-      });
-
-      petSettings = await prisma.petSettings.create({
-        data: {
-          userId: userPayload.userId,
-          petName: user?.nickname || user?.username || 'Pet',
-          petType: 'default',
-          petLevel: 1,
-          petXp: 0,
-        }
-      });
-    }
-
-    return NextResponse.json({ petSettings });
-
+    return NextResponse.json(await syncPet(userPayload.userId, clientToday(request)));
   } catch (error) {
-    console.error('Get pet settings error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return serverError('Get pet error', error);
   }
 }
 
-// PUT update pet settings
+// PUT rename the pet. Level and XP are earned, never set by the client.
 export async function PUT(request: NextRequest) {
   try {
-    const userPayload = getUserFromRequest(request);
-    
-    if (!userPayload) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const userPayload = currentUser(request);
+    if (!userPayload) return unauthorized();
 
     const body = await request.json();
-    const { petName, petType, petLevel, petXp } = body;
+    const petName = String(body.petName ?? '').trim();
+    if (!petName || petName.length > 20) {
+      return errorResponse('Pet name must be between 1 and 20 characters', 400);
+    }
 
-    const updateData: any = {};
-    if (petName !== undefined) updateData.petName = petName;
-    if (petType !== undefined) updateData.petType = petType;
-    if (petLevel !== undefined) updateData.petLevel = petLevel;
-    if (petXp !== undefined) updateData.petXp = petXp;
-
-    const petSettings = await prisma.petSettings.upsert({
+    await prisma.petSettings.upsert({
       where: { userId: userPayload.userId },
-      update: updateData,
-      create: {
-        userId: userPayload.userId,
-        petName: petName || 'Pet',
-        petType: petType || 'default',
-        petLevel: petLevel || 1,
-        petXp: petXp || 0,
-      }
+      update: { petName },
+      create: { userId: userPayload.userId, petName, petType: 'default' },
     });
 
-    return NextResponse.json({
-      message: 'Pet settings updated successfully',
-      petSettings,
-    });
-
+    return NextResponse.json(await syncPet(userPayload.userId, clientToday(request)));
   } catch (error) {
-    console.error('Update pet settings error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return serverError('Update pet error', error);
   }
 }

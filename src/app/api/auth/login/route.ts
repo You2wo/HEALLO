@@ -1,66 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { verifyPassword, generateToken } from '@/lib/auth';
+import { verifyPassword, generateToken, publicUserSelect } from '@/lib/auth';
+import { errorResponse, serverError } from '@/lib/http';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { email, password } = body;
+    const { email, password } = await request.json();
 
-    // Validate input
     if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      );
+      return errorResponse('Email and password are required', 400);
     }
 
-    // Find user
     const user = await prisma.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        password: true,
-        nickname: true,
-        createdAt: true,
-      }
+      where: { email: String(email).trim().toLowerCase() },
+      select: { ...publicUserSelect, password: true },
     });
 
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      );
+    if (!user || user.isDemo) {
+      return errorResponse('Invalid email or password', 401);
     }
 
-    // Verify password
-    const isValidPassword = await verifyPassword(password, user.password);
-    if (!isValidPassword) {
-      return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      );
+    const { password: passwordHash, ...publicUser } = user;
+    if (!(await verifyPassword(password, passwordHash))) {
+      return errorResponse('Invalid email or password', 401);
     }
 
-    // Generate JWT token
     const token = generateToken({ userId: user.id, email: user.email });
 
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
-
-    return NextResponse.json({
-      message: 'Login successful',
-      user: userWithoutPassword,
-      token,
-    });
-
+    return NextResponse.json({ message: 'Login successful', user: publicUser, token });
   } catch (error) {
-    console.error('Login error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return serverError('Login error', error);
   }
 }

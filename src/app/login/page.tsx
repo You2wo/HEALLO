@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AuthLayout, FormError } from "@/components/AuthLayout";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginPage() {
@@ -10,7 +11,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const { login } = useAuth();
   const router = useRouter();
 
@@ -22,99 +23,65 @@ export default function LoginPage() {
     try {
       await login(email, password);
       router.push("/"); // Redirect to home page
-    } catch (err: any) {
-      setError(err.message || "Login failed. Please check your credentials.");
-    } finally {
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed. Check your email and password, then try again.");
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <div className="w-full p-8 md:p-16">
-        {/* Navigation */}
-        <nav className="flex items-center justify-center gap-6 mb-16">
-          <Link href="/settings" className="text-gray-600 hover:text-gray-800 transition-colors" aria-label="Settings">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </Link>
-          <Link href="/" className="text-blue-600 hover:text-blue-700 transition-colors font-medium">
-            Home
-          </Link>
-          <Link href="/journal" className="text-gray-900 hover:text-gray-700 transition-colors font-medium">
-            Journal
-          </Link>
-          <button className="text-gray-900 hover:text-gray-700 transition-colors font-medium">
-            About
-          </button>
-        </nav>
+    <AuthLayout title="Log In">
+      <FormError message={error} />
 
-        {/* Login Form */}
-        <div className="flex-1 flex justify-center items-start pt-8">
-          <div className="w-full max-w-xl">
-            <h1 className="text-6xl font-bold text-gray-800 mb-12">Login</h1>
-
-            {error && (
-              <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleLogin} className="space-y-8">
-              {/* Email Field */}
-              <div>
-                <label htmlFor="email" className="block text-gray-700 text-lg mb-3">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-blue-400 rounded-lg focus:outline-none focus:border-blue-600 transition-colors text-gray-800"
-                  required
-                  disabled={loading}
-                />
-              </div>
-
-              {/* Password Field */}
-              <div>
-                <label htmlFor="password" className="block text-gray-700 text-lg mb-3">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-blue-400 rounded-lg focus:outline-none focus:border-blue-600 transition-colors text-gray-800"
-                  required
-                  disabled={loading}
-                />
-              </div>
-
-              {/* Register Link and Login Button */}
-              <div className="flex items-center justify-between pt-4">
-                <p className="text-gray-700">
-                  No account?{" "}
-                  <Link href="/register" className="text-blue-600 hover:text-blue-700 underline font-medium">
-                    Register
-                  </Link>
-                </p>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-12 py-3 rounded-full shadow-lg transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? "Logging in..." : "Login"}
-                </button>
-              </div>
-            </form>
-          </div>
+      <form onSubmit={handleLogin} className="space-y-5">
+        {/* Email Field */}
+        <div>
+          <label htmlFor="email" className="label">
+            Email
+          </label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            autoComplete="email"
+            spellCheck={false}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="field"
+            required
+          />
         </div>
-      </div>
-    </div>
+
+        {/* Password Field */}
+        <div>
+          <label htmlFor="password" className="label">
+            Password
+          </label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="field"
+            required
+          />
+        </div>
+
+        {/* Register Link and Login Button */}
+        <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+          <p className="text-muted">
+            No account?{" "}
+            <Link href="/register" className="font-semibold text-accent underline">
+              Register
+            </Link>
+          </p>
+          <button type="submit" disabled={loading} className="btn btn-primary">
+            {loading ? "Logging In…" : "Log In"}
+          </button>
+        </div>
+      </form>
+    </AuthLayout>
   );
 }

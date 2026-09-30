@@ -1,5 +1,12 @@
-import { HomePage } from './components/HomePage'
+import { AppShell, RequireAuth } from '@/components/AppShell'
+import { HomeDashboard } from '@/components/home/HomeDashboard'
 
 export default function Page() {
-  return <HomePage />
+  return (
+    <AppShell fill>
+      <RequireAuth>
+        <HomeDashboard />
+      </RequireAuth>
+    </AppShell>
+  )
 }

@@ -1,101 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getUserFromRequest } from '@/lib/auth';
+import { monthRange } from '@/lib/dates';
+import { currentUser, serverError, unauthorized } from '@/lib/http';
 
-// GET all moods for the authenticated user
+// GET moods for the authenticated user, optionally for one month
 export async function GET(request: NextRequest) {
   try {
-    const userPayload = getUserFromRequest(request);
-    
-    if (!userPayload) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const userPayload = currentUser(request);
+    if (!userPayload) return unauthorized();
 
     const { searchParams } = new URL(request.url);
-    const month = searchParams.get('month');
-    const year = searchParams.get('year');
-
-    let whereClause: any = { userId: userPayload.userId };
-
-    // Filter by month and year if provided
-    if (month && year) {
-      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-      const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
-      
-      whereClause.date = {
-        gte: startDate,
-        lte: endDate,
-      };
-    }
+    const month = Number(searchParams.get('month'));
+    const year = Number(searchParams.get('year'));
 
     const moods = await prisma.mood.findMany({
-      where: whereClause,
+      where: {
+        userId: userPayload.userId,
+        ...(month && year ? { date: monthRange(year, month) } : {}),
+      },
       orderBy: { date: 'desc' },
     });
 
     return NextResponse.json({ moods });
-
   } catch (error) {
-    console.error('Get moods error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-// POST create or update a mood entry
-export async function POST(request: NextRequest) {
-  try {
-    const userPayload = getUserFromRequest(request);
-    
-    if (!userPayload) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
-    const { date, mood } = body;
-
-    if (!date || !mood) {
-      return NextResponse.json(
-        { error: 'Date and mood are required' },
-        { status: 400 }
-      );
-    }
-
-    const moodEntry = await prisma.mood.upsert({
-      where: {
-        userId_date: {
-          userId: userPayload.userId,
-          date: new Date(date),
-        }
-      },
-      update: {
-        mood,
-      },
-      create: {
-        userId: userPayload.userId,
-        date: new Date(date),
-        mood,
-      }
-    });
-
-    return NextResponse.json({
-      message: 'Mood saved successfully',
-      mood: moodEntry,
-    });
-
-  } catch (error) {
-    console.error('Save mood error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return serverError('Get moods error', error);
   }
 }
